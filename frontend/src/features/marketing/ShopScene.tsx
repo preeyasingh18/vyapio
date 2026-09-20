@@ -36,11 +36,15 @@ export function ShopScene({ className }: { className?: string }) {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         /**
-         * An arch, not a rectangle. The rounded top follows the shape of the
-         * shopfront so the artwork has somewhere to sit; a plain box would
-         * leave two empty lavender corners above the awning.
+         * A plain rounded card.
+         *
+         * This was an arch, on the theory that a rounded top would follow the
+         * shopfront. It cut the artwork's top corners off instead, and because
+         * the curve and the image's own rectangle did not agree, the edge of
+         * the picture showed through the blend. A rectangle holds the whole
+         * shop and has no seam to hide.
          */
-        className="relative aspect-[8/7] w-full overflow-hidden rounded-t-[44%] rounded-b-[26px] bg-[#EFEBF8]"
+        className="relative aspect-[8/7] w-full overflow-hidden rounded-[var(--radius-card)] bg-[#EFEBF8]"
       >
         <span className="absolute top-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 text-[9px] font-semibold tracking-[0.16em] whitespace-nowrap text-[#9987ac] uppercase sm:top-7 sm:text-[10px]">
           <Store className="size-3" aria-hidden="true" />
@@ -108,13 +112,19 @@ export function ShopScene({ className }: { className?: string }) {
           initial={reduceMotion ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.65 }}
-          className="absolute bottom-4 left-4 z-20 flex items-center gap-2 sm:bottom-6 sm:left-7"
+          className="absolute bottom-4 left-4 z-20 sm:bottom-5 sm:left-5"
         >
-          <LogoMark size={26} />
-          <span className="text-[11px] leading-tight text-[var(--color-muted)]">
-            Less to remember.
-            <br />
-            <b className="font-bold text-[var(--color-ink)]">More room to grow.</b>
+          {/* A card, like the two beside it: as bare text it sat straight on
+              the artwork's shadow and could not be read. */}
+          <span className="flex items-center gap-2.5 rounded-[var(--radius-card)] bg-[var(--color-surface)] py-2.5 pr-3.5 pl-2.5 shadow-[var(--shadow-lift)]">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-[var(--color-lavender)]">
+              <LogoMark size={16} />
+            </span>
+            <span className="text-[11px] leading-tight text-[var(--color-muted)]">
+              Less to remember.
+              <br />
+              <b className="font-bold text-[var(--color-ink)]">More room to grow.</b>
+            </span>
           </span>
         </motion.div>
       </motion.div>
