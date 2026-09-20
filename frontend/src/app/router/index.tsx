@@ -7,6 +7,7 @@ import { AppShell } from '@/components/layout/AppShell';
 import { useT } from '@/app/providers/I18nProvider';
 import { Button } from '@/components/ui';
 import { LogoMark } from '@/components/brand/Logo';
+import { OpeningShop } from '@/components/brand/OpeningShop';
 
 /**
  * Routing.
@@ -43,9 +44,20 @@ const SettingsPage = lazy(() => import('@/features/dashboard/SettingsPage'));
 const CustomerHomePage = lazy(() => import('@/features/customer-app/CustomerHomePage'));
 const CustomerShopPage = lazy(() => import('@/features/customer-app/CustomerShopPage'));
 
-/** Full-screen loader used while a lazy chunk arrives. */
+/**
+ * Full-screen loader used while a lazy chunk arrives.
+ *
+ * Arriving at the shop's front door says so; moving between screens already
+ * inside it does not. Both are the same pulsing mark, so the only difference
+ * is whether there is a sentence under it — and "Opening your shop" while
+ * stepping from Sales to Settings would be a lie about where you are.
+ */
 function RouteFallback() {
   const t = useT();
+  const { pathname } = useLocation();
+
+  if (pathname === '/app') return <OpeningShop show />;
+
   return (
     <div className="flex min-h-dvh items-center justify-center bg-[var(--color-bg)]">
       <LogoMark size={56} pulse label={t('a11y.loading')} />
@@ -63,7 +75,16 @@ function RequireShopkeeper({ children }: { children: ReactNode }) {
   const { status, user, needsOnboarding } = useAuth();
   const location = useLocation();
 
-  if (status === 'loading') return <RouteFallback />;
+  /**
+   * The same opening screen the sign-in button shows.
+   *
+   * This gate is what the browser lands on after sign-in, while the session is
+   * still being established — so a bare pulsing mark here undid the message
+   * from the moment before it, and the shopkeeper watched a logo with nothing
+   * to say. A lazy chunk elsewhere in the app still gets the plain mark: it is
+   * not opening the shop, it is changing screens inside one.
+   */
+  if (status === 'loading') return <OpeningShop show />;
   if (status === 'anonymous') {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
