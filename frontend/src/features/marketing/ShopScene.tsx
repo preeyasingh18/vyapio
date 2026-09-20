@@ -86,27 +86,31 @@ export function ShopScene({ className }: { className?: string }) {
 
         {/* ── The promise, signed ───────────────────────────────────────── */}
         {/*
-          The scene's closing line, set on the lavender.
+          The third card, and the scene's closing line.
 
-          Not a card: it is the scene signing itself, not a third thing
-          floating over it. It reads because the artwork is inset above it —
-          the ground it sits on is clean, which is what it lacked when it was
-          laid straight over the shop's shadow.
+          Set as bare text on the lavender it could not be read — grey on a
+          tinted ground, over the artwork's own shadow. On white, like the two
+          beside it, it carries.
         */}
         <motion.div
           initial={reduceMotion ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.65 }}
-          className="absolute bottom-5 left-5 z-20 flex items-center gap-2.5 sm:bottom-7 sm:left-8"
+          className="absolute bottom-4 left-2 z-20 sm:bottom-6 sm:left-4"
         >
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/15">
-            <LogoMark size={16} />
-          </span>
-          <span className="text-[11px] leading-tight text-[var(--color-muted)] sm:text-[12px]">
-            Less to remember.
-            <br />
-            <b className="font-bold text-[var(--color-ink)]">More room to grow.</b>
-          </span>
+          <motion.div
+            {...float(2.6)}
+            className="flex -rotate-[3deg] items-center gap-2.5 rounded-[var(--radius-card)] bg-[var(--color-surface)] py-2.5 pr-3.5 pl-2.5 shadow-[var(--shadow-lift)]"
+          >
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-[var(--color-lavender)]">
+              <LogoMark size={15} />
+            </span>
+            <span className="min-w-0 text-[11px] leading-tight text-[var(--color-muted)]">
+              Less to remember.
+              <br />
+              <b className="font-bold text-[var(--color-ink)]">More room to grow.</b>
+            </span>
+          </motion.div>
         </motion.div>
       </motion.div>
 
