@@ -286,9 +286,28 @@ export const authService = {
     return { salt, hash: hashPassword(password, salt) };
   },
 
-  /** The account behind an address, or null. Used to refuse a duplicate signup. */
+  /**
+   * The account behind an address, or null.
+   *
+   * Asks Cognito in AWS mode rather than answering null. Returning null there
+   * meant the confirm step believed no account existed, wrote a second local
+   * one, and hung the new shop off *its* id — so the shopkeeper would verify
+   * their email, sign in through Cognito, and find no shop, because the shop
+   * belonged to a user id that nothing could sign in as.
+   */
   async findByEmail(email: string): Promise<{ userId: string } | null> {
-    if (config.auth.mode === 'aws') return null;
+    if (config.auth.mode === 'aws') {
+      try {
+        const account = await cognito().send(
+          new AdminGetUserCommand({ UserPoolId: config.auth.userPoolId!, Username: email }),
+        );
+        const sub = account.UserAttributes?.find((entry) => entry.Name === 'sub')?.Value;
+        return sub ? { userId: sub } : null;
+      } catch (error) {
+        if (error instanceof Error && error.name === 'UserNotFoundException') return null;
+        throw error;
+      }
+    }
     const user = await readLocalUser(email);
     return user ? { userId: user.userId } : null;
   },

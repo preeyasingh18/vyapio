@@ -261,7 +261,14 @@ authRoutes.post('/confirm', async (ctx) => {
     await authService.confirmSignup(email, input.code);
   }
 
-  // Checked again here, not just at signup: two tabs could have got this far.
+  /**
+   * Whose account this is.
+   *
+   * With Cognito it already exists — `confirmSignup` above just confirmed it —
+   * and its `sub` is the identity every later request arrives with, so the
+   * shop has to hang off that. Locally there is no account yet, and this is
+   * the only place one is created.
+   */
   const already = await authService.findByEmail(email);
   const userId = already
     ? already.userId
@@ -274,7 +281,17 @@ authRoutes.post('/confirm', async (ctx) => {
         passwordHash: pending.passwordHash,
       });
 
-  if (pending.role === 'SHOPKEEPER' && !already) {
+  /**
+   * The shop, unless this user already has one.
+   *
+   * Keyed on the vendor rather than on the account: with Cognito the account
+   * always exists by now, so "no account yet" would have meant no shop is ever
+   * created. Asking whether the shop exists is also the right dedupe for two
+   * tabs racing this step, which is what the check was for.
+   */
+  const existingVendor = await vendors.findByUserId(userId);
+
+  if (pending.role === 'SHOPKEEPER' && !existingVendor) {
     const vendor: Vendor = VendorSchema.parse({
       vendorId: newVendorId(),
       userId,

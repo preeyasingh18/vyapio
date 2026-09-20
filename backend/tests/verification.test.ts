@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { request, resetWorld } from './helpers';
 import { setEmailProvider, type EmailMessage } from '../src/services/email';
 import { readPending } from '../src/services/verification';
@@ -129,6 +129,78 @@ describe('entering the code', () => {
     const response = await confirm(latestCode(), 'ANIL@example.com');
 
     expect(response.status).toBe(200);
+  });
+
+  it('hangs the shop off the account that will sign in', async () => {
+    /**
+     * The shop has to belong to the same user id that later arrives on a
+     * request. Creating the account and the shop from two different ids meant
+     * a shopkeeper could verify their email, sign in, and find no shop — the
+     * data existed, under an identity nothing could authenticate as.
+     */
+    await signup();
+    await confirm(latestCode());
+
+    const login = await request('POST', '/auth/login', {
+      body: { email: EMAIL, password: FORM.password },
+    });
+    const userId = (login.body.user as { userId: string }).userId;
+    const vendor = login.body.vendor as { vendorId: string } | null;
+
+    expect(vendor).not.toBeNull();
+
+    const { vendors } = await import('../src/services/repository');
+    const found = await vendors.findByUserId(userId);
+    expect(found?.vendorId).toBe(vendor!.vendorId);
+  });
+
+  it('still creates the shop when the account already exists', async () => {
+    /**
+     * What Cognito looks like from here.
+     *
+     * With a user pool, `confirmSignup` has just confirmed an account that
+     * Cognito created at signup — so by this point the account always exists.
+     * Deciding whether to create the shop from "is there an account yet" made
+     * that answer always no shop: the shopkeeper would verify their email,
+     * sign in, and find nothing. The question has to be whether *the shop*
+     * exists, not whether the account does.
+     */
+    const { authService } = await import('../src/services/auth');
+    const { vendors } = await import('../src/services/repository');
+
+    await signup();
+    const code = latestCode();
+
+    // Stand in for Cognito: the account is already there, with its own id.
+    const spy = vi
+      .spyOn(authService, 'findByEmail')
+      .mockResolvedValue({ userId: 'cognito-sub-1234' });
+
+    try {
+      const response = await confirm(code);
+      expect(response.status).toBe(200);
+
+      // And it belongs to the id that will arrive on every later request.
+      const vendor = await vendors.findByUserId('cognito-sub-1234');
+      expect(vendor?.shopName).toBe('Anil Stores');
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('does not create a second shop if confirm is repeated', async () => {
+    // Two tabs racing the same code, or a retry after a dropped response.
+    await signup();
+    const code = latestCode();
+    await confirm(code);
+    await confirm(code);
+
+    const login = await request('POST', '/auth/login', {
+      body: { email: EMAIL, password: FORM.password },
+    });
+
+    // One shop, and the shopkeeper lands in it.
+    expect((login.body.vendor as { shopName: string }).shopName).toBe('Anil Stores');
   });
 
   it('cannot be used twice', async () => {
