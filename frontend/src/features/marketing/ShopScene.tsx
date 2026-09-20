@@ -93,6 +93,30 @@ export function ShopScene({ className }: { className?: string }) {
         >
           ✦
         </span>
+
+        {/* ── The promise, signed ───────────────────────────────────────── */}
+        {/*
+          Inside the arch, on the lavender.
+
+          It used to hang off the outer wrapper at `-bottom-2 -left-2`, which
+          put it below and to the left of the arch on the bare cream page —
+          reading as something that had slipped out of the picture rather than
+          as part of it. Set on the same ground as the shop, it is the scene's
+          closing line.
+        */}
+        <motion.div
+          initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.65 }}
+          className="absolute bottom-4 left-4 z-20 flex items-center gap-2 sm:bottom-6 sm:left-7"
+        >
+          <LogoMark size={26} />
+          <span className="text-[11px] leading-tight text-[var(--color-muted)]">
+            Less to remember.
+            <br />
+            <b className="font-bold text-[var(--color-ink)]">More room to grow.</b>
+          </span>
+        </motion.div>
       </motion.div>
 
       {/* ── Every customer, remembered ──────────────────────────────────── */}
@@ -158,20 +182,6 @@ export function ShopScene({ className }: { className?: string }) {
         </motion.div>
       </motion.div>
 
-      {/* ── The promise, signed ─────────────────────────────────────────── */}
-      <motion.div
-        initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.65 }}
-        className="absolute -bottom-2 left-0 z-10 flex items-center gap-2 sm:-left-2"
-      >
-        <LogoMark size={26} />
-        <span className="text-[11px] leading-tight text-[var(--color-muted)]">
-          Less to remember.
-          <br />
-          <b className="font-bold text-[var(--color-ink)]">More room to grow.</b>
-        </span>
-      </motion.div>
     </div>
   );
 }
