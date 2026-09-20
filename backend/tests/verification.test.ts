@@ -154,6 +154,58 @@ describe('entering the code', () => {
     expect(found?.vendorId).toBe(vendor!.vendorId);
   });
 
+  it('lets Cognito check its own code, not the local one', async () => {
+    /**
+     * With a user pool there are two codes: the one Cognito generated and
+     * mailed, and the one in the pending record here, which is never sent
+     * anywhere. Checking the local one first meant the code the shopkeeper
+     * actually received was rejected as invalid every time, while the screen
+     * counted down their remaining attempts.
+     */
+    const { authService } = await import('../src/services/auth');
+
+    await signup();
+    const localCode = latestCode();
+
+    const mode = vi.spyOn(authService, 'mode').mockReturnValue('aws');
+    const confirmed = vi.spyOn(authService, 'confirmSignup').mockResolvedValue(undefined);
+    const found = vi
+      .spyOn(authService, 'findByEmail')
+      .mockResolvedValue({ userId: 'cognito-sub-9999' });
+
+    try {
+      // A code Cognito would accept and the local record would not.
+      const cognitoCode = localCode === '123456' ? '654321' : '123456';
+      const response = await confirm(cognitoCode);
+
+      expect(response.status).toBe(200);
+      expect(confirmed).toHaveBeenCalledWith(EMAIL, cognitoCode);
+    } finally {
+      mode.mockRestore();
+      confirmed.mockRestore();
+      found.mockRestore();
+    }
+  });
+
+  it('reports what Cognito said about a bad code', async () => {
+    const { authService } = await import('../src/services/auth');
+    await signup();
+
+    const mode = vi.spyOn(authService, 'mode').mockReturnValue('aws');
+    const rejected = Object.assign(new Error('bad code'), { name: 'CodeMismatchException' });
+    const confirmed = vi.spyOn(authService, 'confirmSignup').mockRejectedValue(rejected);
+
+    try {
+      const response = await confirm('000000');
+      expect(response.status).toBe(422);
+      // The exception name says nothing useful; this says what to do.
+      expect((response.body.error as { message: string }).message).toMatch(/check the email/i);
+    } finally {
+      mode.mockRestore();
+      confirmed.mockRestore();
+    }
+  });
+
   it('still creates the shop when the account already exists', async () => {
     /**
      * What Cognito looks like from here.

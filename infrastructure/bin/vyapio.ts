@@ -75,9 +75,24 @@ const ai = {
  *   npx cdk deploy --all -c appOrigin=https://d1234.cloudfront.net
  */
 const appOrigin = app.node.tryGetContext('appOrigin') as string | undefined;
+
+/**
+ * Who may call the API from a browser.
+ *
+ * On dev the deployed origin is *added* to the local ones rather than
+ * replacing them: a deploy that silently revokes localhost breaks the machine
+ * the next change is written on, and the failure shows up as "you're offline"
+ * in the browser rather than as anything about CORS.
+ *
+ * On any other stage only the deployed origin is allowed — localhost has no
+ * business reaching a real shop's data.
+ */
+const LOCAL_ORIGINS = ['http://localhost:5173', 'http://localhost:4173'];
 const allowedOrigins = appOrigin
-  ? [appOrigin]
-  : ['http://localhost:5173', 'http://localhost:4173'];
+  ? stage === 'dev'
+    ? [appOrigin, ...LOCAL_ORIGINS]
+    : [appOrigin]
+  : LOCAL_ORIGINS;
 
 const notificationProvider =
   (app.node.tryGetContext('notificationProvider') as string | undefined) ?? 'mock';

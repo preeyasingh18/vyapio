@@ -2,6 +2,7 @@ import { Router, ok, created, type RequestContext } from '../utils/router';
 import {
   checkCode,
   discardPending,
+  readPending,
   normaliseEmail,
   OTP_TTL_MINUTES,
   reissueCode,
@@ -236,29 +237,90 @@ authRoutes.post('/login', async (ctx) => {
  * what makes "verified" mean something: there is no path that produces an
  * account without having posted a code to the address and had it returned.
  */
+/**
+ * Cognito's exception names, in words a shopkeeper can act on.
+ *
+ * The raw names — CodeMismatchException, ExpiredCodeException — say nothing
+ * about what to do next, and each of these needs a different move.
+ */
+function cognitoCodeError(error: unknown): AppError {
+  const name = error instanceof Error ? error.name : '';
+
+  if (name === 'CodeMismatchException') {
+    return new AppError('VALIDATION_FAILED', name, {
+      userMessage: 'Invalid verification code. Please check the email and try again.',
+    });
+  }
+  if (name === 'ExpiredCodeException') {
+    return new AppError('VALIDATION_FAILED', name, {
+      userMessage: 'This code has expired. Ask for a new one.',
+    });
+  }
+  if (name === 'LimitExceededException' || name === 'TooManyFailedAttemptsException') {
+    return new AppError('RATE_LIMITED', name, {
+      userMessage: 'Too many attempts. Wait a few minutes, then ask for a new code.',
+    });
+  }
+  if (name === 'NotAuthorizedException') {
+    // Already confirmed — the usual cause is a second tab, or a retry.
+    return new AppError('CONFLICT', name, {
+      userMessage: 'This email is already verified. Please sign in.',
+    });
+  }
+  if (name === 'UserNotFoundException') {
+    return new AppError('VALIDATION_FAILED', name, {
+      userMessage: 'That signup has expired. Please start again.',
+    });
+  }
+
+  return new AppError('VALIDATION_FAILED', name || 'code rejected', {
+    userMessage: 'That code could not be verified. Ask for a new one.',
+  });
+}
+
 authRoutes.post('/confirm', async (ctx) => {
   const input = parseBody(ctx, ConfirmSignupRequestSchema);
   const email = normaliseEmail(input.email);
 
-  const outcome = await checkCode(email, input.code);
-  if (!outcome.ok) {
-    ctx.logger.warn('verification code rejected', {
-      operation: 'auth.confirm',
-      reason: outcome.reason,
-    });
-    throw new AppError(outcome.reason === 'exhausted' ? 'RATE_LIMITED' : 'VALIDATION_FAILED', `code ${outcome.reason}`, {
-      userMessage: outcome.message,
+  /**
+   * Whoever issued the code is the one who checks it.
+   *
+   * With a user pool, Cognito generated the code and mailed it; the pending
+   * record here holds only the shop details, and the code inside it was never
+   * sent anywhere. Checking that one first meant the code the shopkeeper
+   * actually received — Cognito's — was rejected as invalid, every time, while
+   * the app counted down their remaining attempts.
+   */
+  const pending = await readPending(email);
+  if (!pending) {
+    throw new AppError('VALIDATION_FAILED', 'no signup in progress', {
+      userMessage: 'That signup has expired. Please start again.',
     });
   }
 
-  const pending = outcome.pending;
-
-  /**
-   * Cognito holds its own unconfirmed user, so there the code is its to check
-   * and this record exists only to carry the shop details across.
-   */
   if (authService.mode() === 'aws') {
-    await authService.confirmSignup(email, input.code);
+    try {
+      await authService.confirmSignup(email, input.code);
+    } catch (error) {
+      ctx.logger.warn('verification code rejected by Cognito', {
+        operation: 'auth.confirm',
+        reason: error instanceof Error ? error.name : 'unknown',
+      });
+      throw cognitoCodeError(error);
+    }
+  } else {
+    const outcome = await checkCode(email, input.code);
+    if (!outcome.ok) {
+      ctx.logger.warn('verification code rejected', {
+        operation: 'auth.confirm',
+        reason: outcome.reason,
+      });
+      throw new AppError(
+        outcome.reason === 'exhausted' ? 'RATE_LIMITED' : 'VALIDATION_FAILED',
+        `code ${outcome.reason}`,
+        { userMessage: outcome.message },
+      );
+    }
   }
 
   /**
