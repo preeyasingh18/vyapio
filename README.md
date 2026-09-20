@@ -246,8 +246,8 @@ Stated plainly, because a list of caveats is more useful than a list of ticks.
 ## Testing
 
 ```
-backend    119 tests   tenancy · ledger · auth · voice · agent · inventory · sync · search
-frontend    36 tests   offline queue · money formatting · components · a11y · i18n
+backend    289 tests   tenancy · ledger · auth · verification · voice · agent · inventory · sync · search · whatsapp
+frontend   140 tests   offline queue · money formatting · components · a11y · i18n · voice · runtime
 ```
 
 The tests worth reading first are `backend/tests/tenancy.test.ts` — which
@@ -265,6 +265,15 @@ must not be able to talk its way past.
 | [AWS_SETUP.md](docs/AWS_SETUP.md) | Getting it onto AWS |
 | [DEMO.md](docs/DEMO.md) | The three-minute demo, scene by scene |
 | [SECURITY.md](docs/SECURITY.md) | Tenancy, secrets, and the AI confirmation model |
+
+---
+
+## Try it
+
+| | |
+|---|---|
+| **App** | <https://main.d2gujibx6ttp7w.amplifyapp.com> |
+| **API** | <https://16gqk99xh6.execute-api.ap-south-1.amazonaws.com> |
 
 ---
 
