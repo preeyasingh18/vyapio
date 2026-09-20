@@ -75,7 +75,7 @@ export function ShopScene({ className }: { className?: string }) {
            * Anchored to the bottom with room reserved above, so the label at
            * the top of the arch has somewhere to sit that is not the roof.
            */
-          className="absolute inset-0 size-full object-contain object-bottom px-[5%] pt-[11%] pb-[2%] mix-blend-multiply"
+          className="absolute inset-0 size-full object-contain object-bottom px-[2%] pt-[9%] pb-0 mix-blend-multiply"
           alt="A miniature neighbourhood grocery shop with a lavender awning, crates of fruit and a bicycle outside"
           width={1200}
           height={1026}

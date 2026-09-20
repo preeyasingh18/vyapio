@@ -99,7 +99,7 @@ export default function LandingPage() {
           />
         </div>
 
-        <div className="mx-auto grid max-w-6xl items-center gap-16 px-4 pt-10 pb-24 sm:px-6 sm:pt-16 lg:grid-cols-[1.05fr_1fr] lg:gap-10 lg:pt-20 lg:pb-32">
+        <div className="mx-auto grid max-w-6xl items-center gap-16 px-4 pt-10 pb-24 sm:px-6 sm:pt-16 lg:grid-cols-[0.92fr_1.18fr] lg:gap-8 lg:pt-20 lg:pb-32">
           <div>
             <motion.div
               initial={reduceMotion ? false : { opacity: 0, y: 18 }}
@@ -186,7 +186,7 @@ export default function LandingPage() {
             </motion.div>
           </div>
 
-          <ShopScene className="lg:mt-2" />
+          <ShopScene className="lg:mt-2 lg:-mr-6 xl:-mr-10" />
         </div>
       </section>
 
