@@ -11,6 +11,21 @@ all of it in their head.
 
 ---
 
+## Live
+
+| | |
+|---|---|
+| **App** | <https://main.d2gujibx6ttp7w.amplifyapp.com> |
+| **API** | <https://16gqk99xh6.execute-api.ap-south-1.amazonaws.com> |
+
+Open the app and press **Try the demo shop** — it signs in to a seeded shop
+with real customers, sales and pending payments. No account needed.
+
+Running on AWS in `ap-south-1`: DynamoDB, Cognito, Lambda (container image),
+API Gateway, S3, EventBridge, SNS, and Amplify Hosting for the app itself.
+
+---
+
 ## Quick start
 
 No AWS account needed. Everything below runs on a laptop.
