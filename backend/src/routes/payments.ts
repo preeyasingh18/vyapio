@@ -3,7 +3,7 @@ import { Router, ok } from '../utils/router';
 import { parseQuery } from '../middleware/validation';
 import { requireVendor } from '../middleware/auth';
 import { notifications as notificationRepo, payments as paymentRepo } from '../services/repository';
-import { describeProvider } from '../services/notifications';
+import { checkWhatsAppTemplate, describeProvider } from '../services/notifications';
 import { lastNDaysRange, withinRange } from '../utils/dates';
 
 /**
@@ -94,5 +94,15 @@ paymentRoutes.get('/reminders', async (ctx) => {
  */
 paymentRoutes.get('/whatsapp/status', async (ctx) => {
   await requireVendor(ctx);
-  return ok(describeProvider());
+  const status = describeProvider();
+
+  // Credentials being present is not the same as messages getting through.
+  if (status.provider === 'whatsapp' && status.canDeliver) {
+    const template = await checkWhatsAppTemplate();
+    if (!template.ok) {
+      return ok({ ...status, canDeliver: false, status: 'incomplete', note: template.detail });
+    }
+  }
+
+  return ok(status);
 });

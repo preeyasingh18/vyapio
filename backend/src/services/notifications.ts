@@ -502,6 +502,77 @@ export function describeProvider(): ProviderStatus {
   };
 }
 
+/**
+ * Whether Meta has actually approved the configured template.
+ *
+ * `describeProvider` can only see what is in the environment, and "the
+ * credentials are set" is not the same as "this works": a template sits in
+ * review for a while after it is created, and until it clears, every reminder
+ * is rejected. Reporting "connected" through that window tells the shopkeeper
+ * their messages are going out when none of them are.
+ *
+ * This asks Meta, so it is a network call — it belongs on the screen where
+ * someone is setting WhatsApp up, not in the reminder list, which is read far
+ * more often.
+ */
+export async function checkWhatsAppTemplate(): Promise<
+  { ok: true } | { ok: false; status: string; detail: string }
+> {
+  const {
+    whatsappToken,
+    whatsappBusinessAccountId,
+    whatsappApiVersion,
+    whatsappTemplate,
+    whatsappTemplateLanguage,
+  } = config.notifications;
+
+  // Nothing to check. A missing business account id is not an error: it is
+  // needed only for this lookup, never for sending.
+  if (!whatsappToken || !whatsappTemplate || !whatsappBusinessAccountId) return { ok: true };
+
+  try {
+    const response = await fetch(
+      `https://graph.facebook.com/${whatsappApiVersion}/${whatsappBusinessAccountId}/message_templates?name=${encodeURIComponent(whatsappTemplate)}`,
+      {
+        headers: { authorization: `Bearer ${whatsappToken}` },
+        signal: AbortSignal.timeout(8_000),
+      },
+    );
+
+    // Could not ask. That is not evidence of a problem, so this reports no
+    // problem rather than inventing one from a failed lookup.
+    if (!response.ok) return { ok: true };
+
+    const payload = (await response.json()) as {
+      data?: Array<{ name: string; language: string; status: string }>;
+    };
+    const found = payload.data?.find((entry) => entry.language === whatsappTemplateLanguage);
+
+    if (!found) {
+      return {
+        ok: false,
+        status: 'missing',
+        detail: `WhatsApp has no template called "${whatsappTemplate}" in ${whatsappTemplateLanguage}. Check the name and the language code in Meta.`,
+      };
+    }
+
+    if (found.status !== 'APPROVED') {
+      return {
+        ok: false,
+        status: found.status,
+        detail:
+          found.status === 'PENDING'
+            ? `The template "${whatsappTemplate}" is still being reviewed by Meta. Reminders are recorded but not sent until it is approved.`
+            : `Meta has marked the template "${whatsappTemplate}" as ${found.status}. Reminders cannot be sent until that is fixed.`,
+      };
+    }
+
+    return { ok: true };
+  } catch {
+    return { ok: true };
+  }
+}
+
 /** Test seam. */
 export function setProvider(next: NotificationProvider | null): void {
   provider = next;

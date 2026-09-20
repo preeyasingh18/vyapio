@@ -72,6 +72,14 @@ export default function PaymentsPage() {
   const khata = useQuery<KhataResponse>('/khata');
   const payments = useQuery<PaymentsResponse>('/payments', { query: { days: 30 } });
   const reminders = useQuery<RemindersResponse>('/payments/reminders');
+  /**
+   * The live check, which also asks Meta whether the template is approved.
+   *
+   * The reminder list carries a provider block too, but that one only knows
+   * what is in the environment — and credentials being set is not the same as
+   * messages getting through. This is the one the banner believes.
+   */
+  const messaging = useQuery<RemindersResponse['provider']>('/payments/whatsapp/status');
 
   return (
     <PageTransition>
@@ -272,8 +280,8 @@ export default function PaymentsPage() {
               {/* Whether reminders can actually be delivered here.
                   Stated before the log, because a shopkeeper reading a list of
                   reminders needs to know whether any of them left the shop. */}
-              {reminders.data ? (
-                <ProviderBanner provider={reminders.data.provider} />
+              {messaging.data ?? reminders.data ? (
+                <ProviderBanner provider={messaging.data ?? reminders.data!.provider} />
               ) : null}
 
               {reminders.loading && !reminders.data ? (
