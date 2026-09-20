@@ -96,20 +96,37 @@ describe('what Settings says about the shop’s records', () => {
     expect(screen.queryByText(/has not been sent to AWS/i)).not.toBeInTheDocument();
   });
 
-  it('says the records are in AWS, and lists what is still local', async () => {
+  it('still says, per subsystem, what is running where', async () => {
+    /**
+     * The paragraph that used to restate this is gone, so these rows are now
+     * the only place the truth appears. Losing them would turn "we removed a
+     * duplicate" into "we hid it".
+     */
     runtime = make({ ...ALL_AWS, ai: 'local', transcribe: 'local', textract: 'local' });
     await mount();
 
-    expect(screen.getByText(/records are in AWS/i)).toBeInTheDocument();
-    expect(screen.getByText(/ai, transcribe, textract/)).toBeInTheDocument();
+    // The labels are capitalised by CSS; the text itself is the raw key.
+    for (const name of ['ai', 'transcribe', 'textract']) {
+      const row = screen.getByText(name).closest('div')!;
+      expect(row.textContent, name).toContain('local');
+    }
+    expect(screen.getByText('database').closest('div')!.textContent).toContain('AWS');
   });
 
-  it('still warns honestly when the records really are local', async () => {
-    // The original message is correct here, and must not be softened.
+  it('still says when reminders are not being delivered', async () => {
+    // A shopkeeper has to be able to find out that nothing is being sent.
+    // Payments carries the actionable warning; this is the status row.
+    runtime = { ...make(ALL_AWS), notificationProvider: 'mock' };
+    await mount();
+
+    expect(screen.getByText('Notifications').closest('div')!.textContent).toContain('mock');
+  });
+
+  it('reads as local when the records really are on this machine', async () => {
     runtime = make({ ...ALL_AWS, database: 'local', auth: 'local', storage: 'local' });
     await mount();
 
-    expect(screen.getByText(/stored on this machine/i)).toBeInTheDocument();
+    expect(screen.getByText(/local mode/i)).toBeInTheDocument();
   });
 
   it('reads as connected once the records are in AWS', async () => {

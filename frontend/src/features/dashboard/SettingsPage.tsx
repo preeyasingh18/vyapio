@@ -238,25 +238,16 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Where the records are, then what is still running here —
-                two separate facts, and only the first is about the shop. */}
-            {!runtime.fullyProvisioned ? (
-              <p className="border-t border-[var(--color-line)] bg-[var(--color-sunken)] px-4 py-3 text-xs leading-snug text-[var(--color-muted)]">
-                {dataOnAws
-                  ? t('runtime.partlyLocalBody', {
-                      subsystems: runtime.localSubsystems.join(', '),
-                    })
-                  : t('runtime.localModeBody', {
-                      subsystems: runtime.localSubsystems.join(', '),
-                    })}
-              </p>
-            ) : null}
+            {/*
+              No banner repeating the rows above.
 
-            {runtime.notificationProvider === 'mock' ? (
-              <p className="border-t border-[var(--color-line)] bg-[var(--color-warning-soft)] px-4 py-3 text-xs leading-snug text-[var(--color-warning)]">
-                {t('runtime.notificationsMock')}
-              </p>
-            ) : null}
+              Each subsystem already states what it is running on, and
+              Notifications already says "mock" — a paragraph restating that in
+              warning colours added no fact and made a configured, working shop
+              look broken. The one place the messaging warning is worth raising
+              is Payments, where a shopkeeper is looking at reminders and can
+              act on it.
+            */}
           </Card>
             );
           })()
