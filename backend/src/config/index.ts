@@ -194,26 +194,6 @@ export const config = {
     whatsappRequireOptIn: bool('WHATSAPP_REQUIRE_OPT_IN', false),
   },
 
-  /**
-   * Outbound email, for signup verification codes.
-   *
-   * Server-side only. None of this reaches the browser — see services/email.ts,
-   * which is the sole reader, and note that the SMTP password must never be
-   * copied into a VITE_* variable.
-   *
-   * With no host configured the console provider takes over: the flow still
-   * works end to end on a laptop, and it says plainly that nothing was sent
-   * rather than leaving someone waiting for a code.
-   */
-  email: {
-    provider: (str('EMAIL_PROVIDER') ?? 'smtp') as 'smtp' | 'console',
-    host: str('EMAIL_HOST'),
-    port: int('EMAIL_PORT', 587),
-    user: str('EMAIL_USER'),
-    password: str('EMAIL_PASSWORD'),
-    from: str('EMAIL_FROM') ?? 'Vyapio <no-reply@vyapio.app>',
-  },
-
   demo: {
     enabled: bool('DEMO_MODE', true),
     email: str('DEMO_EMAIL') ?? 'demo@vyapio.app',

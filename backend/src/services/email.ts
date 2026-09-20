@@ -1,5 +1,3 @@
-import { createTransport, type Transporter } from 'nodemailer';
-import { config } from '../config/index';
 import { logger } from '../utils/logger';
 
 /**
@@ -11,8 +9,14 @@ import { logger } from '../utils/logger';
  * have no way to tell whether to wait or start again.
  *
  * So `sent` is a distinct field from `ok`, the console provider returns
- * `sent: false`, and the signup route refuses to move the user to the
- * verification screen when nothing left the machine.
+ * `sent: false`, and the signup route says plainly where to find the code
+ * instead of sending the shopkeeper hunting through an inbox.
+ *
+ * There is no SMTP client here on purpose. Once a Cognito user pool is
+ * configured the whole verification journey belongs to Cognito — it holds the
+ * unconfirmed user, generates the code and mails it — and a second mailer
+ * would be a second thing that can send a different code for the same signup.
+ * This exists for local development, where there is no user pool.
  */
 
 export type EmailMessage = {
@@ -33,23 +37,29 @@ export type EmailResult = {
   detail: string;
 };
 
+export interface EmailProvider {
+  readonly name: string;
+  send(message: EmailMessage): Promise<EmailResult>;
+}
+
 /* -------------------------------------------------------- ConsoleProvider */
 
 /**
- * The default, and what runs with no mail credentials configured.
+ * The only provider, and what runs whenever Cognito is not configured.
  *
- * Writes the message to the log so the whole flow is exercisable on a laptop
- * with no mail server, and is explicit that nothing was delivered.
+ * Writes the message to the log so the signup flow is fully exercisable on a
+ * laptop, and is explicit that nothing was delivered.
  *
- * The code itself is logged here and nowhere else, and only in this provider:
- * it is the only way to complete a signup locally, and there is no inbox for
- * it to arrive in. Configure a real provider and it stops being logged.
+ * The code is logged here and nowhere else. Locally it is the only way to
+ * finish a signup — there is no inbox for it to arrive in — and with a user
+ * pool configured this provider is never reached, because Cognito does the
+ * mailing and this code path is not used at all.
  */
-class ConsoleProvider {
+class ConsoleProvider implements EmailProvider {
   readonly name = 'console';
 
   async send(message: EmailMessage): Promise<EmailResult> {
-    logger.info('email not sent — no provider configured', {
+    logger.info('email not sent — no mail provider in local mode', {
       operation: 'email.console',
       to: message.to,
       subject: message.subject,
@@ -59,92 +69,22 @@ class ConsoleProvider {
       ok: true,
       sent: false,
       provider: this.name,
-      detail: 'No email provider is configured, so nothing was sent.',
+      detail:
+        'Local mode has no mailbox, so the code was written to the server log instead of being sent.',
     };
-  }
-}
-
-/* ----------------------------------------------------------- SmtpProvider */
-
-class SmtpProvider {
-  readonly name = 'smtp';
-  private transporter: Transporter | null = null;
-
-  private transport(): Transporter {
-    this.transporter ??= createTransport({
-      host: config.email.host,
-      port: config.email.port,
-      // Implicit TLS on 465; STARTTLS is negotiated on everything else.
-      secure: config.email.port === 465,
-      auth:
-        config.email.user && config.email.password
-          ? { user: config.email.user, pass: config.email.password }
-          : undefined,
-      connectionTimeout: 10_000,
-      greetingTimeout: 10_000,
-      socketTimeout: 20_000,
-    });
-    return this.transporter;
-  }
-
-  async send(message: EmailMessage): Promise<EmailResult> {
-    try {
-      const info = await this.transport().sendMail({
-        from: config.email.from,
-        to: message.to,
-        subject: message.subject,
-        text: message.text,
-        html: message.html,
-      });
-
-      logger.info('email sent', {
-        operation: 'email.smtp',
-        to: message.to,
-        subject: message.subject,
-        messageId: info.messageId,
-      });
-
-      return { ok: true, sent: true, provider: this.name, detail: 'Sent.' };
-    } catch (error) {
-      /**
-       * The message, not the error object.
-       *
-       * Some SMTP libraries attach the connection options — including the
-       * password — to the thrown error, and logging the whole thing would put
-       * the mail credentials in the log file.
-       */
-      logger.error('email send failed', {
-        operation: 'email.smtp',
-        to: message.to,
-        error: error instanceof Error ? error.message : 'unknown error',
-      });
-      return {
-        ok: false,
-        sent: false,
-        provider: this.name,
-        detail: 'Could not send the email. Nothing was delivered.',
-      };
-    }
   }
 }
 
 /* ------------------------------------------------------------------ Facade */
 
-export interface EmailProvider {
-  readonly name: string;
-  send(message: EmailMessage): Promise<EmailResult>;
-}
-
 let provider: EmailProvider | null = null;
 
 export function getEmailProvider(): EmailProvider {
-  if (provider) return provider;
-  provider =
-    config.email.provider === 'smtp' && config.email.host ? new SmtpProvider() : new ConsoleProvider();
+  provider ??= new ConsoleProvider();
   return provider;
 }
 
-/** Test seam, and what the config reload path uses. */
+/** Test seam. */
 export function setEmailProvider(next: EmailProvider | null): void {
   provider = next;
 }
