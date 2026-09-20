@@ -174,28 +174,28 @@ export async function seedDemoShop(
 
   /* ── Auth account ──────────────────────────────────────────────────────── */
 
-  let userId: string;
-  if (config.auth.mode === 'local') {
-    userId = await authService.ensureLocalUser({
-      email: config.demo.email,
-      password: config.demo.password,
-      name: 'Anil Sharma',
-      phone: '9810012345',
-      role: 'SHOPKEEPER',
-    });
-    console.log(`  Demo login ready: ${config.demo.email}`);
-  } else {
-    // With Cognito configured the account must exist in the user pool; creating
-    // one here would need admin credentials the API deliberately does not hold.
-    const existing = await vendorRepo.findByUserId(process.env.DEMO_USER_ID ?? '');
-    userId = existing?.userId ?? process.env.DEMO_USER_ID ?? '';
-    if (!userId) {
-      throw new Error(
-        'Cognito is configured, so the demo user must exist in the user pool.\n' +
-          '  Sign up through the app, then re-run with DEMO_USER_ID=<cognito-sub> npm run seed',
-      );
-    }
-  }
+  /**
+   * The demo account, wherever accounts live on this environment.
+   *
+   * `ensureLocalUser` writes to the local store or to Cognito depending on the
+   * configuration, so this is one call either way. It used to refuse in AWS
+   * mode and tell whoever was deploying to go and sign up by hand — which left
+   * a freshly deployed environment with a seeded shop and no way into it: the
+   * data was there and the door was not.
+   *
+   * The seed runs from a laptop with an operator's credentials, which is how
+   * it is allowed to create a user. The API itself holds no such permission.
+   */
+  const userId = await authService.ensureLocalUser({
+    email: config.demo.email,
+    password: config.demo.password,
+    name: 'Anil Sharma',
+    phone: '9810012345',
+    role: 'SHOPKEEPER',
+  });
+  console.log(
+    `  Demo login ready: ${config.demo.email} (${config.auth.mode === 'aws' ? 'Cognito' : 'local'})`,
+  );
 
   /* ── Vendor ────────────────────────────────────────────────────────────── */
 
@@ -205,9 +205,7 @@ export async function seedDemoShop(
     return {
       vendorId: existingVendor.vendorId,
       counts: {},
-      demoLogin: config.auth.mode === 'local'
-        ? { email: config.demo.email, password: config.demo.password }
-        : null,
+      demoLogin: { email: config.demo.email, password: config.demo.password },
     };
   }
 
@@ -243,9 +241,7 @@ export async function seedDemoShop(
     return {
       vendorId,
       counts: {},
-      demoLogin: config.auth.mode === 'local'
-        ? { email: config.demo.email, password: config.demo.password }
-        : null,
+      demoLogin: { email: config.demo.email, password: config.demo.password },
     };
   }
 
@@ -618,10 +614,9 @@ export async function seedDemoShop(
   return {
     vendorId,
     counts,
-    demoLogin:
-      config.auth.mode === 'local'
-        ? { email: config.demo.email, password: config.demo.password }
-        : null,
+    // Real in both modes now: the seed creates the account wherever accounts
+    // live, so there is always something to print at the end.
+    demoLogin: { email: config.demo.email, password: config.demo.password },
   };
 }
 

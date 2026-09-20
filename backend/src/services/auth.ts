@@ -8,6 +8,9 @@ import {
   ForgotPasswordCommand,
   ConfirmForgotPasswordCommand,
   GlobalSignOutCommand,
+  AdminCreateUserCommand,
+  AdminSetUserPasswordCommand,
+  AdminGetUserCommand,
   type AuthenticationResultType,
 } from '@aws-sdk/client-cognito-identity-provider';
 import { CognitoJwtVerifier } from 'aws-jwt-verify';
@@ -212,6 +215,61 @@ function localTokens(user: LocalUserRecord): AuthTokens {
 }
 
 /* ------------------------------------------------------------------- Facade */
+
+/**
+ * Creates or repairs the demo user in Cognito.
+ *
+ * `AdminCreateUser` suppresses the invitation email — nobody is being invited,
+ * and there is no mailbox behind demo@vyapio.app to receive it. The password
+ * is then set as permanent, because a user created this way otherwise lands in
+ * FORCE_CHANGE_PASSWORD and cannot sign in with it.
+ *
+ * Idempotent: an account that already exists has its password reset to the
+ * configured one rather than being refused, so re-running the seed fixes a
+ * demo login instead of failing on it.
+ */
+async function ensureCognitoUser(input: SignupInput & { userId?: string }): Promise<string> {
+  const UserPoolId = config.auth.userPoolId!;
+
+  try {
+    await cognito().send(
+      new AdminCreateUserCommand({
+        UserPoolId,
+        Username: input.email,
+        MessageAction: 'SUPPRESS',
+        UserAttributes: [
+          { Name: 'email', Value: input.email },
+          { Name: 'email_verified', Value: 'true' },
+          { Name: 'name', Value: input.name },
+          { Name: 'phone_number', Value: `+91${input.phone}` },
+          { Name: 'custom:role', Value: input.role },
+        ],
+      }),
+    );
+  } catch (error) {
+    // Already there. The password below still runs, so a forgotten or expired
+    // demo password is repaired by re-seeding.
+    if (!(error instanceof Error && error.name === 'UsernameExistsException')) throw error;
+  }
+
+  await cognito().send(
+    new AdminSetUserPasswordCommand({
+      UserPoolId,
+      Username: input.email,
+      Password: input.password,
+      Permanent: true,
+    }),
+  );
+
+  // Cognito's own `sub` is the user id everything else keys off.
+  const account = await cognito().send(
+    new AdminGetUserCommand({ UserPoolId, Username: input.email }),
+  );
+  const sub = account.UserAttributes?.find((entry) => entry.Name === 'sub')?.Value;
+  if (!sub) throw new AppError('INTERNAL', 'Cognito returned a user with no sub');
+
+  return sub;
+}
 
 export const authService = {
   mode: () => config.auth.mode,
@@ -509,10 +567,20 @@ export const authService = {
   },
 
   /** Used by the seed script to provision the demo login in local mode. */
+  /**
+   * The demo account, made to exist and to have this password.
+   *
+   * Used by the seed, which is the one place allowed to mint an account
+   * without a verification code — it is building a shop nobody owns, from a
+   * fixed email and password that are in the configuration.
+   *
+   * In AWS mode the account has to live in Cognito, because that is where
+   * `login` looks. Seeding a deployed environment used to throw here, so the
+   * demo shop could be written to DynamoDB and then be impossible to sign in
+   * to: the data was there and the door was not.
+   */
   async ensureLocalUser(input: SignupInput & { userId?: string }): Promise<string> {
-    if (config.auth.mode === 'aws') {
-      throw new AppError('BAD_REQUEST', 'ensureLocalUser is only valid in local auth mode');
-    }
+    if (config.auth.mode === 'aws') return ensureCognitoUser(input);
     const existing = await readLocalUser(input.email);
     const salt = existing?.passwordSalt ?? randomBytes(16).toString('base64');
     const record: LocalUserRecord = {
