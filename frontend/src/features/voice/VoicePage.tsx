@@ -70,10 +70,22 @@ export default function VoicePage() {
     }
   };
 
-  // Parse as soon as the recogniser stops and we have words.
+  /**
+   * The recogniser has stopped. Where the screen goes depends on whether
+   * anything was said.
+   *
+   * Only the first case was handled, so stopping without speaking left the
+   * screen on "Listening" for ever: the microphone really had closed, but
+   * nothing moved the screen off that phase, and the stop button looked
+   * broken because pressing it again did exactly what it had already done.
+   */
   useEffect(() => {
-    if (phase === 'listening' && !speech.listening && speech.transcript.trim()) {
+    if (phase !== 'listening' || speech.listening) return;
+
+    if (speech.transcript.trim()) {
       void parse(speech.transcript);
+    } else {
+      setPhase('idle');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [speech.listening, speech.transcript, phase]);
