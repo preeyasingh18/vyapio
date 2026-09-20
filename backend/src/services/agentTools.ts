@@ -511,14 +511,22 @@ async function dispatch(
       const allCustomers = await customerRepo.list(vendorId);
       const drafts = [...byCustomer.values()].map((entry) => {
         const customer = allCustomers.find((c) => c.customerId === entry.customerId);
+
+        // WhatsApp first when the shop has recorded a separate number for it.
+        // Guessing that the calling number is also the WhatsApp one is how a
+        // stranger gets told about someone else's debt.
+        const phone = customer?.whatsappPhone || customer?.phone || '';
+
         return {
           customerId: entry.customerId,
           customerName: entry.customerName,
-          phone: customer?.phone ?? '',
+          phone,
           amount: entry.amount,
           daysOverdue: entry.daysOverdue,
           /** True when there is no number to send to. Surfaced before confirming. */
-          missingPhone: !customer?.phone,
+          missingPhone: !phone,
+          /** Shown on the confirmation screen, so consent is visible before sending. */
+          optedIn: customer?.whatsappOptIn ?? false,
         };
       });
 

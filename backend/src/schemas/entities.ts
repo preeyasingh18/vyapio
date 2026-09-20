@@ -51,6 +51,22 @@ export const CustomerSchema = z.object({
   vendorId: NonEmptyString,
   name: NonEmptyString.max(80),
   phone: z.string().default(''),
+  /**
+   * Where to reach them on WhatsApp, when that differs from `phone`.
+   *
+   * Usually it does not, so this is empty and the reminder falls back to
+   * `phone`. It exists for the shop whose customer gives one number for calls
+   * and another for WhatsApp, which is common enough that guessing wrong means
+   * messaging a stranger about someone else's debt.
+   */
+  whatsappPhone: z.string().default(''),
+  /**
+   * Whether this customer agreed to be messaged.
+   *
+   * Recorded whether or not it is enforced — WHATSAPP_REQUIRE_OPT_IN decides
+   * that — because consent is a fact about the customer, not a setting.
+   */
+  whatsappOptIn: z.boolean().default(false),
   email: z.string().default(''),
   /** Opaque scan token. Contains no personal data. See utils/ids.ts. */
   qrId: NonEmptyString,
@@ -340,7 +356,29 @@ export type NotificationType = z.infer<typeof NotificationTypeSchema>;
  * `not_delivered` is a first-class outcome, not a failure. The mock provider
  * returns it, and the UI reports it honestly rather than claiming a send.
  */
-export const NOTIFICATION_STATUSES = ['queued', 'sent', 'not_delivered', 'failed'] as const;
+/**
+ * What became of a message.
+ *
+ * `not_delivered` and `failed` were not enough once a real provider was wired
+ * up: "no phone number saved" and "WhatsApp rejected the template" are both
+ * failures, but only one of them is something the shopkeeper can fix, and the
+ * reminder log is where they would look to find out.
+ */
+export const NOTIFICATION_STATUSES = [
+  'queued',
+  'sent',
+  /** Recorded, but nothing left the machine — the mock provider's outcome. */
+  'not_delivered',
+  'failed',
+  /** No number on file. The shopkeeper adds one and tries again. */
+  'no_phone',
+  /** A number is saved but is not a number we can send to. */
+  'invalid_phone',
+  /** Consent is required and this customer has not given it. */
+  'opt_in_required',
+  /** An identical reminder already went out; this one was not sent again. */
+  'duplicate',
+] as const;
 export const NotificationStatusSchema = z.enum(NOTIFICATION_STATUSES);
 export type NotificationStatus = z.infer<typeof NotificationStatusSchema>;
 
@@ -355,7 +393,18 @@ export const NotificationSchema = z.object({
   to: z.string(),
   body: z.string().max(2000),
   status: NotificationStatusSchema,
+  /** The provider's own id, for matching a message up with their dashboard. */
   providerMessageId: z.string().optional(),
+  /** When it actually left, set only on a real delivery. */
+  sentAt: IsoDateTimeSchema.optional(),
+  /**
+   * The provider's own error, kept for diagnosis.
+   *
+   * Never shown to the shopkeeper — `detail` is written for them. This is what
+   * Meta said, which is useful to whoever is fixing the template and useless
+   * to everyone else.
+   */
+  failureReason: z.string().max(500).optional(),
   /** Why it was not delivered, in plain language, shown to the shopkeeper. */
   detail: z.string().max(500).default(''),
   createdAt: IsoDateTimeSchema,

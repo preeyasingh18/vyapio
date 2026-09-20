@@ -225,6 +225,8 @@ export async function createShop(options: {
     vendorId: vendor.vendorId,
     name: options.customerName ?? 'Ramesh Kumar',
     phone: customerPhone,
+    whatsappPhone: '',
+    whatsappOptIn: false,
     email: '',
     qrId: newQrId(),
     outstanding: 0,

@@ -21,6 +21,7 @@ import {
   Input,
   Select,
   Sheet,
+  Switch,
   Skeleton,
 } from '@/components/ui';
 import { PageTransition, Stagger, StaggerItem } from '@/components/motion';
@@ -524,6 +525,15 @@ function PhoneSheet({
   const toast = useToast();
 
   const [digits, setDigits] = useState(customer.phone);
+  /**
+   * A separate WhatsApp number, only when the shop has one.
+   *
+   * Left empty means "the same number", which is the usual case — and
+   * assuming it when it is not true sends a stranger a message about someone
+   * else's debt, so it has to be recorded rather than guessed.
+   */
+  const [whatsapp, setWhatsapp] = useState(customer.whatsappPhone ?? '');
+  const [optIn, setOptIn] = useState(customer.whatsappOptIn ?? false);
   const [error, setError] = useState<ApiError | null>(null);
   const [touched, setTouched] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -540,21 +550,29 @@ function PhoneSheet({
     setWasOpen(open);
     if (open) {
       setDigits(customer.phone);
+      setWhatsapp(customer.whatsappPhone ?? '');
+      setOptIn(customer.whatsappOptIn ?? false);
       setError(null);
       setTouched(false);
     }
   }
 
   const valid = /^[6-9]\d{9}$/.test(digits);
+  // Empty is fine — it means "use the number above".
+  const whatsappValid = whatsapp === '' || /^[6-9]\d{9}$/.test(whatsapp);
 
   const submit = async () => {
     setTouched(true);
-    if (!valid) return;
+    if (!valid || !whatsappValid) return;
 
     setBusy(true);
     setError(null);
     try {
-      await api.patch(`/customers/${customer.customerId}`, { phone: digits });
+      await api.patch(`/customers/${customer.customerId}`, {
+        phone: digits,
+        whatsappPhone: whatsapp,
+        whatsappOptIn: optIn,
+      });
       toast.success(t('customers.saveNumber'), `+91 ${formatPhone(digits)}`);
       onClose();
       // Re-read rather than patch local state: the page is driven by the
@@ -604,6 +622,28 @@ function PhoneSheet({
             : error?.issueFor('phone')
               ? { error: error.issueFor('phone') }
               : { hint: t('customers.phoneHint') })}
+        />
+
+        {/* WhatsApp, for payment reminders.
+            Optional, and empty means the number above. */}
+        <Input
+          type="tel"
+          inputMode="numeric"
+          label={`${t('customers.whatsappNumber')} (${t('common.optional')})`}
+          value={whatsapp}
+          onChange={(event) => setWhatsapp(event.target.value.replace(/\D/g, '').slice(0, 10))}
+          prefix="+91"
+          placeholder={t('customers.whatsappSame')}
+          {...(touched && !whatsappValid
+            ? { error: t('customers.phoneInvalid') }
+            : { hint: t('customers.whatsappHint') })}
+        />
+
+        <Switch
+          checked={optIn}
+          onChange={setOptIn}
+          label={t('customers.whatsappOptIn')}
+          description={t('customers.whatsappOptInHint')}
         />
 
         {error && error.issues.length === 0 ? (

@@ -224,7 +224,12 @@
     "phonePlaceholder": "ಮೊಬೈಲ್ ನಂಬರ್ ನಮೂದಿಸಿ",
     "saveNumber": "ನಂಬರ್ ಉಳಿಸಿ",
     "phoneInvalid": "ಸರಿಯಾದ 10 ಅಂಕಿಯ ಮೊಬೈಲ್ ನಂಬರ್ ನಮೂದಿಸಿ.",
-    "callCustomer": "{name} ಗೆ ಕರೆ ಮಾಡಿ"
+    "callCustomer": "{name} ಗೆ ಕರೆ ಮಾಡಿ",
+    "whatsappNumber": "ವಾಟ್ಸಾಪ್ ಸಂಖ್ಯೆ",
+    "whatsappSame": "ಮೇಲಿನದೇ",
+    "whatsappHint": "ವಾಟ್ಸಾಪ್ ಬೇರೆ ಸಂಖ್ಯೆಯಲ್ಲಿದ್ದರೆ ಮಾತ್ರ",
+    "whatsappOptIn": "ವಾಟ್ಸಾಪ್‌ನಲ್ಲಿ ಸಂದೇಶ ಕಳುಹಿಸಬಹುದು",
+    "whatsappOptInHint": "ಒಪ್ಪಿದ ಗ್ರಾಹಕರಿಗೆ ಮಾತ್ರ ಜ್ಞಾಪನೆ ಹೋಗುತ್ತದೆ."
   },
   "sales": {
     "title": "ಮಾರಾಟ",

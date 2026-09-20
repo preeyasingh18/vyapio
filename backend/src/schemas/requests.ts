@@ -104,6 +104,10 @@ export const UpdateVendorRequestSchema = z.object({
 export const CreateCustomerRequestSchema = z.object({
   name: NonEmptyString.max(80),
   phone: OptionalPhoneSchema,
+  /** Where to reach them on WhatsApp, when that differs from `phone`. */
+  whatsappPhone: OptionalPhoneSchema,
+  /** Whether they agreed to be messaged. See CustomerSchema. */
+  whatsappOptIn: z.boolean().default(false),
   email: OptionalEmailSchema,
   notes: z.string().max(1000).default(''),
   /** Reuse a token produced by the scanner when creating from an unknown QR. */
@@ -113,6 +117,8 @@ export const CreateCustomerRequestSchema = z.object({
 export const UpdateCustomerRequestSchema = z.object({
   name: NonEmptyString.max(80).optional(),
   phone: OptionalPhoneSchema.optional(),
+  whatsappPhone: OptionalPhoneSchema.optional(),
+  whatsappOptIn: z.boolean().optional(),
   email: OptionalEmailSchema.optional(),
   notes: z.string().max(1000).optional(),
 });

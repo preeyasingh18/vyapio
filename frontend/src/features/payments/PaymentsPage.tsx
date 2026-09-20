@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CircleAlert, Info, Wallet } from 'lucide-react';
+import { CircleAlert, CircleCheck, Wallet } from 'lucide-react';
 import { PageBody, PageHeader } from '@/components/layout/PageHeader';
 import {
   Badge,
@@ -46,7 +46,21 @@ type PaymentsResponse = {
 
 type RemindersResponse = {
   reminders: Notification[];
-  provider: { name: string; channel: string; canDeliver: boolean; note: string };
+  /**
+   * Safe status only — the backend never returns credentials. See
+   * `describeProvider` in backend/src/services/notifications.ts.
+   */
+  provider: {
+    name: string;
+    channel: string;
+    configured: boolean;
+    canDeliver: boolean;
+    status: 'connected' | 'not_configured' | 'incomplete';
+    template?: string;
+    templateLanguage?: string;
+    requiresOptIn: boolean;
+    note: string;
+  };
   totals: { count: number; delivered: number; notDelivered: number; failed: number };
 };
 
@@ -255,31 +269,11 @@ export default function PaymentsPage() {
             )
           ) : (
             <>
-              {/* Provider banner: says up front whether reminders can be
-                  delivered at all on this environment. */}
+              {/* Whether reminders can actually be delivered here.
+                  Stated before the log, because a shopkeeper reading a list of
+                  reminders needs to know whether any of them left the shop. */}
               {reminders.data ? (
-                <Card
-                  className={`mb-3 p-3.5 ${
-                    reminders.data.provider.canDeliver ? '' : 'border-[var(--color-warning)]'
-                  }`}
-                >
-                  <div className="flex gap-2.5">
-                    {reminders.data.provider.canDeliver ? (
-                      <Info
-                        className="mt-0.5 size-4 shrink-0 text-[var(--color-muted)]"
-                        aria-hidden="true"
-                      />
-                    ) : (
-                      <CircleAlert
-                        className="mt-0.5 size-4 shrink-0 text-[var(--color-warning)]"
-                        aria-hidden="true"
-                      />
-                    )}
-                    <p className="text-xs leading-snug text-[var(--color-muted)]">
-                      {reminders.data.provider.note}
-                    </p>
-                  </div>
-                </Card>
+                <ProviderBanner provider={reminders.data.provider} />
               ) : null}
 
               {reminders.loading && !reminders.data ? (
@@ -339,6 +333,73 @@ export default function PaymentsPage() {
         </div>
       </PageBody>
     </PageTransition>
+  );
+}
+
+/**
+ * Whether messaging is wired up, and what to do when it is not.
+ *
+ * Three states rather than two: WhatsApp selected but half-configured looks
+ * like success from the outside — credentials are set, the provider is not
+ * "mock" — right up until a reminder is sent and Meta rejects it for having no
+ * approved template. The shopkeeper finds out after telling a customer they
+ * were reminded, which is the worst moment to find out.
+ */
+function ProviderBanner({
+  provider,
+}: {
+  provider: {
+    name: string;
+    canDeliver: boolean;
+    status: 'connected' | 'not_configured' | 'incomplete';
+    template?: string;
+    requiresOptIn: boolean;
+    note: string;
+  };
+}) {
+  const connected = provider.status === 'connected';
+
+  return (
+    <Card
+      className={`mb-3 p-3.5 ${connected ? 'border-[var(--color-success)]' : 'border-[var(--color-warning)]'}`}
+    >
+      <div className="flex gap-2.5">
+        {connected ? (
+          <CircleCheck
+            className="mt-0.5 size-4 shrink-0 text-[var(--color-success)]"
+            aria-hidden="true"
+          />
+        ) : (
+          <CircleAlert
+            className="mt-0.5 size-4 shrink-0 text-[var(--color-warning)]"
+            aria-hidden="true"
+          />
+        )}
+
+        <div className="min-w-0">
+          <p className="text-xs font-bold text-[var(--color-ink)]">
+            {connected
+              ? provider.name === 'whatsapp'
+                ? 'WhatsApp connected'
+                : `${provider.name.toUpperCase()} connected`
+              : provider.status === 'incomplete'
+                ? 'WhatsApp not finished'
+                : 'No messaging provider'}
+          </p>
+
+          <p className="mt-0.5 text-xs leading-snug text-[var(--color-muted)]">{provider.note}</p>
+
+          {/* The template name is the usual thing to get wrong, and it is not
+              a secret — the token never leaves the server. */}
+          {connected && provider.template ? (
+            <p className="mt-1 text-[11px] text-[var(--color-faint)]">
+              Template: <span className="font-medium">{provider.template}</span>
+              {provider.requiresOptIn ? ' · only to customers who opted in' : ''}
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </Card>
   );
 }
 

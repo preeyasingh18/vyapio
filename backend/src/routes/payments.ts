@@ -3,7 +3,7 @@ import { Router, ok } from '../utils/router';
 import { parseQuery } from '../middleware/validation';
 import { requireVendor } from '../middleware/auth';
 import { notifications as notificationRepo, payments as paymentRepo } from '../services/repository';
-import { getProvider } from '../services/notifications';
+import { describeProvider } from '../services/notifications';
 import { lastNDaysRange, withinRange } from '../utils/dates';
 
 /**
@@ -62,25 +62,37 @@ paymentRoutes.get('/reminders', async (ctx) => {
   const { vendorId } = await requireVendor(ctx);
   const list = await notificationRepo.list(vendorId, 100);
   const reminders = list.filter((entry) => entry.type === 'payment_reminder');
-  const provider = getProvider();
+  const status = describeProvider();
 
   return ok({
     reminders,
-    provider: {
-      name: provider.name,
-      channel: provider.channel,
-      /** False for the mock provider — surfaced as a banner in the UI. */
-      canDeliver: provider.name !== 'mock',
-      note:
-        provider.name === 'mock'
-          ? 'No messaging provider is configured, so reminders are recorded but not sent. Set NOTIFICATION_PROVIDER to sns or whatsapp to deliver them.'
-          : `Reminders are delivered through ${provider.name}.`,
-    },
+    /**
+     * Safe by construction: `describeProvider` returns whether messaging works
+     * and what to fix, never the credentials. The access token is read only
+     * inside services/notifications.ts and is returned by no route.
+     */
+    provider: { name: status.provider, ...status },
     totals: {
       count: reminders.length,
       delivered: reminders.filter((entry) => entry.status === 'sent').length,
       notDelivered: reminders.filter((entry) => entry.status === 'not_delivered').length,
       failed: reminders.filter((entry) => entry.status === 'failed').length,
+      /** Things the shopkeeper can act on, as opposed to things that broke. */
+      needsPhone: reminders.filter(
+        (entry) => entry.status === 'no_phone' || entry.status === 'invalid_phone',
+      ).length,
     },
   });
+});
+
+/**
+ * Whether messaging is wired up, for the banner on the Payments screen.
+ *
+ * Separate from the reminder log because the UI asks this before there is
+ * anything to show, and because a shopkeeper setting WhatsApp up wants to know
+ * it worked without having to send a reminder to a real customer to find out.
+ */
+paymentRoutes.get('/whatsapp/status', async (ctx) => {
+  await requireVendor(ctx);
+  return ok(describeProvider());
 });

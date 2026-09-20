@@ -881,6 +881,8 @@ describe('matching a customer by name', () => {
         vendorId: shop.vendor.vendorId,
         name: `Customer Number ${String(index).padStart(3, '0')}`,
         phone: '',
+        whatsappPhone: '',
+        whatsappOptIn: false,
         email: '',
         qrId: newQrId(),
         outstanding: 0,

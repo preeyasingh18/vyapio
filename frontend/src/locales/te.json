@@ -224,7 +224,12 @@
     "phonePlaceholder": "మొబైల్ నంబర్ ఇవ్వండి",
     "saveNumber": "నంబర్ సేవ్ చేయండి",
     "phoneInvalid": "సరైన 10 అంకెల మొబైల్ నంబర్ ఇవ్వండి.",
-    "callCustomer": "{name} కు కాల్ చేయండి"
+    "callCustomer": "{name} కు కాల్ చేయండి",
+    "whatsappNumber": "వాట్సాప్ నంబర్",
+    "whatsappSame": "పైదే",
+    "whatsappHint": "వాట్సాప్ వేరే నంబర్‌లో ఉంటేనే",
+    "whatsappOptIn": "వాట్సాప్‌లో సందేశం పంపవచ్చు",
+    "whatsappOptInHint": "అంగీకరించిన కస్టమర్లకే రిమైండర్లు వెళ్తాయి."
   },
   "sales": {
     "title": "అమ్మకాలు",

@@ -224,7 +224,12 @@
     "phonePlaceholder": "মোবাইল নম্বর দিন",
     "saveNumber": "নম্বর সেভ করুন",
     "phoneInvalid": "সঠিক ১০ সংখ্যার মোবাইল নম্বর দিন।",
-    "callCustomer": "{name}-কে কল করুন"
+    "callCustomer": "{name}-কে কল করুন",
+    "whatsappNumber": "হোয়াটসঅ্যাপ নম্বর",
+    "whatsappSame": "উপরেরটাই",
+    "whatsappHint": "শুধু যদি হোয়াটসঅ্যাপ অন্য নম্বরে থাকে",
+    "whatsappOptIn": "হোয়াটসঅ্যাপে বার্তা পাঠানো যাবে",
+    "whatsappOptInHint": "যাঁরা সম্মতি দিয়েছেন কেবল তাঁদেরই রিমাইন্ডার যায়।"
   },
   "sales": {
     "title": "বিক্রি",

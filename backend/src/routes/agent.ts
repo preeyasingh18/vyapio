@@ -3,8 +3,14 @@ import { parseBody } from '../middleware/validation';
 import { requireVendor } from '../middleware/auth';
 import { plan } from '../services/agentCore';
 import { SHOPKEEPER_TOOLS } from '../services/agentTools';
-import { aiActions, commitments as commitmentRepo, customers as customerRepo } from '../services/repository';
+import {
+  aiActions,
+  commitments as commitmentRepo,
+  customers as customerRepo,
+  notifications as notificationRepo,
+} from '../services/repository';
 import { notify, templates, getProvider } from '../services/notifications';
+import { config } from '../config/index';
 import { publish } from '../services/events';
 import { badRequest, conflict, notFound } from '../utils/errors';
 import { formatMoney } from '../utils/money';
@@ -80,6 +86,15 @@ const FOLLOW_UPS: Partial<Record<AgentToolName, string[]>> = {
 };
 
 /** Offered when nothing more specific fits — never an empty row of chips. */
+/**
+ * How long a delivered reminder suppresses another to the same customer.
+ *
+ * One working day: long enough that a second batch prepared the same afternoon
+ * does not message someone twice, short enough that tomorrow's chase still
+ * goes out.
+ */
+const DUPLICATE_WINDOW_MS = 12 * 60 * 60 * 1000;
+
 const GENERAL_FOLLOW_UPS = [
   'Who owes me money?',
   "Show today's sales",
@@ -257,17 +272,64 @@ agentRoutes.post('/confirm', async (ctx) => {
     amount: number;
     daysOverdue: number;
     missingPhone: boolean;
+    optedIn?: boolean;
   }>) ?? [];
 
   const results: AgentExecution['results'] = [];
   let deliveredCount = 0;
+
+  /**
+   * Reminders already delivered recently.
+   *
+   * The action-status check above stops this whole request being replayed, but
+   * not a shopkeeper preparing a second batch a minute later over the same
+   * customers — and a customer messaged twice about one debt reads as
+   * harassment, not diligence.
+   */
+  const recent = await notificationRepo.list(vendorId, 200);
+  const alreadySent = new Set(
+    recent
+      .filter(
+        (entry) =>
+          entry.type === 'payment_reminder' &&
+          entry.status === 'sent' &&
+          entry.customerId &&
+          Date.now() - Date.parse(entry.createdAt) < DUPLICATE_WINDOW_MS,
+      )
+      .map((entry) => entry.customerId as string),
+  );
 
   for (const draft of drafts) {
     if (draft.missingPhone || !draft.phone) {
       results.push({
         label: draft.customerName,
         ok: false,
-        detail: 'No phone number saved for this customer.',
+        detail: 'No phone number saved for this customer. Add one and try again.',
+      });
+      continue;
+    }
+
+    if (alreadySent.has(draft.customerId)) {
+      results.push({
+        label: draft.customerName,
+        ok: false,
+        detail: 'Reminder already sent today — not sent again.',
+      });
+      continue;
+    }
+
+    /**
+     * Consent, when the shop has chosen to require it.
+     *
+     * Off by default, so nothing changes for a shop that has not turned it on.
+     * Where it is on, the reminder is still recorded — the shopkeeper needs to
+     * see that it was skipped, and why.
+     */
+    if (config.notifications.whatsappRequireOptIn && draft.optedIn === false) {
+      results.push({
+        label: draft.customerName,
+        ok: false,
+        detail: 'This customer has not opted in to WhatsApp messages, so nothing was sent.',
       });
       continue;
     }
@@ -285,6 +347,14 @@ agentRoutes.post('/confirm', async (ctx) => {
       type: 'payment_reminder',
       to: draft.phone,
       body,
+      // Ignored by SNS and the mock provider; WhatsApp needs an approved
+      // template for a message the shop starts. See services/notifications.ts.
+      templateValues: templates.paymentReminderValues({
+        shopName: vendor.shopName,
+        customerName: draft.customerName,
+        amount: draft.amount,
+        daysOverdue: draft.daysOverdue,
+      }),
     });
 
     if (result.delivered) deliveredCount += 1;

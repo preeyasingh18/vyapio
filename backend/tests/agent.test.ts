@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createShop, request, resetWorld, type TestShop } from './helpers';
 import { runTool, SHOPKEEPER_TOOLS, CUSTOMER_TOOLS, TOOL_DEFINITIONS } from '../src/services/agentTools';
 import { setProvider, type NotificationProvider } from '../src/services/notifications';
-import { aiActions, commitmentItem, notifications } from '../src/services/repository';
+import { aiActions, commitmentItem, customers, notifications } from '../src/services/repository';
 import { getStore, keys } from '../src/services/dynamodb';
 import { isoDaysAgo, nowIso } from '../src/utils/dates';
 import { newCommitmentId } from '../src/utils/ids';
@@ -474,5 +474,203 @@ describe('what to ask next', () => {
   it('never repeats itself', async () => {
     const run = await ask('check which products are running low');
     expect(new Set(run.followUps).size).toBe(run.followUps.length);
+  });
+});
+
+/**
+ * Sending the same reminder twice.
+ *
+ * The action-status check stops one request being replayed, but not a
+ * shopkeeper preparing a second batch a few minutes later over the same
+ * customers — and a customer messaged twice about one debt reads as
+ * harassment, not diligence.
+ */
+describe('not messaging the same customer twice', () => {
+  let shop: TestShop;
+
+  /** A provider that really "delivers", so the guard has something to see. */
+  const delivering = {
+    name: 'test-delivering',
+    channel: 'whatsapp',
+    async send() {
+      return {
+        ok: true,
+        delivered: true,
+        provider: 'test-delivering',
+        channel: 'whatsapp',
+        status: 'sent' as const,
+        messageId: 'wamid.TEST',
+        detail: 'Delivered to WhatsApp.',
+      };
+    },
+  };
+
+  beforeEach(async () => {
+    resetWorld();
+    shop = await createShop({ email: 'dupe@test.app', shopName: 'Sharma Stores' });
+    setProvider(delivering);
+  });
+
+  afterEach(() => setProvider(null));
+
+  const sendBatch = async () => {
+    const run = await request('POST', '/agent/run', {
+      token: shop.token,
+      body: { instruction: 'prepare payment reminders for overdue customers' },
+    });
+    const proposal = (run.body.run as { proposal: { actionId: string } | null }).proposal;
+    if (!proposal) return null;
+
+    const confirm = await request('POST', '/agent/confirm', {
+      token: shop.token,
+      body: { actionId: proposal.actionId },
+    });
+    return confirm.body.execution as {
+      results: Array<{ label: string; ok: boolean; detail: string }>;
+    };
+  };
+
+  it('sends the first one', async () => {
+    await createOverdueDebt(shop, 60000);
+    const first = await sendBatch();
+
+    expect(first!.results[0]!.ok).toBe(true);
+  });
+
+  it('does not send it again in the same afternoon', async () => {
+    await createOverdueDebt(shop, 60000);
+    await sendBatch();
+    const second = await sendBatch();
+
+    expect(second!.results[0]!.ok).toBe(false);
+    expect(second!.results[0]!.detail).toMatch(/already sent/i);
+  });
+
+  it('records the second attempt rather than pretending it went', async () => {
+    await createOverdueDebt(shop, 60000);
+    await sendBatch();
+    await sendBatch();
+
+    // One delivery on the log, not two — the shopkeeper's record of what the
+    // customer actually received has to match what they received.
+    const log = await request('GET', '/payments/reminders', { token: shop.token });
+    const sent = (log.body.reminders as Array<{ status: string }>).filter(
+      (entry) => entry.status === 'sent',
+    );
+    expect(sent).toHaveLength(1);
+  });
+});
+
+/**
+ * Consent.
+ *
+ * Off by default, so a shop that has not turned it on is unaffected. Where it
+ * is on, a reminder to someone who never agreed is not sent — and is still
+ * recorded, because the shopkeeper needs to see that it was skipped and why.
+ */
+describe('only messaging customers who agreed', () => {
+  let shop: TestShop;
+
+  beforeEach(async () => {
+    resetWorld();
+    shop = await createShop({ email: 'optin@test.app', shopName: 'Sharma Stores' });
+  });
+
+  it('sends without asking when opt-in is not required', async () => {
+    // The default. A shop already using reminders must not find them stopped
+    // the day it pulls this change.
+    await createOverdueDebt(shop, 60000);
+
+    const run = await request('POST', '/agent/run', {
+      token: shop.token,
+      body: { instruction: 'prepare payment reminders for overdue customers' },
+    });
+    const proposal = (run.body.run as { proposal: { actionId: string } | null }).proposal;
+    expect(proposal).not.toBeNull();
+
+    const confirm = await request('POST', '/agent/confirm', {
+      token: shop.token,
+      body: { actionId: proposal!.actionId },
+    });
+    const results = (confirm.body.execution as { results: Array<{ detail: string }> }).results;
+
+    // The mock provider records rather than delivers, but nothing was skipped
+    // for want of consent.
+    expect(results[0]!.detail).not.toMatch(/opted in/i);
+  });
+
+  it('carries whether the customer agreed into the draft', async () => {
+    await createOverdueDebt(shop, 60000);
+
+    const run = await request('POST', '/agent/run', {
+      token: shop.token,
+      body: { instruction: 'prepare payment reminders for overdue customers' },
+    });
+
+    const action = (await aiActions.list(shop.vendor.vendorId, 10)).find(
+      (entry) => entry.actionType === 'send_payment_reminders',
+    );
+    const drafts = (action!.result?.drafts ?? []) as Array<{ optedIn?: boolean }>;
+
+    // Recorded whether or not it is enforced: consent is a fact about the
+    // customer, not a setting.
+    expect(drafts[0]).toHaveProperty('optedIn');
+    void run;
+  });
+});
+
+/**
+ * Which number a reminder goes to.
+ *
+ * A shop whose customer gives one number for calls and another for WhatsApp
+ * has both on file. Guessing that the calling number is the WhatsApp one is
+ * how a stranger gets told about someone else's debt.
+ */
+describe('choosing the number', () => {
+  let shop: TestShop;
+
+  beforeEach(async () => {
+    resetWorld();
+    shop = await createShop({ email: 'number@test.app', shopName: 'Sharma Stores' });
+  });
+
+  it('prefers the WhatsApp number when the shop has recorded one', async () => {
+    await customers.put({
+      ...(await customers.require(shop.vendor.vendorId, shop.customer.customerId)),
+      phone: '9812300022',
+      whatsappPhone: '9998887770',
+    });
+    await createOverdueDebt(shop, 60000);
+
+    await request('POST', '/agent/run', {
+      token: shop.token,
+      body: { instruction: 'prepare payment reminders for overdue customers' },
+    });
+
+    const action = (await aiActions.list(shop.vendor.vendorId, 10)).find(
+      (entry) => entry.actionType === 'send_payment_reminders',
+    );
+    const drafts = (action!.result?.drafts ?? []) as Array<{ phone: string }>;
+    expect(drafts[0]!.phone).toBe('9998887770');
+  });
+
+  it('falls back to the ordinary number, which is the usual case', async () => {
+    await customers.put({
+      ...(await customers.require(shop.vendor.vendorId, shop.customer.customerId)),
+      phone: '9812300022',
+      whatsappPhone: '',
+    });
+    await createOverdueDebt(shop, 60000);
+
+    await request('POST', '/agent/run', {
+      token: shop.token,
+      body: { instruction: 'prepare payment reminders for overdue customers' },
+    });
+
+    const action = (await aiActions.list(shop.vendor.vendorId, 10)).find(
+      (entry) => entry.actionType === 'send_payment_reminders',
+    );
+    const drafts = (action!.result?.drafts ?? []) as Array<{ phone: string }>;
+    expect(drafts[0]!.phone).toBe('9812300022');
   });
 });

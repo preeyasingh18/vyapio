@@ -60,6 +60,8 @@ function makeCustomer(phone: unknown): Record<string, unknown> {
     vendorId: 'v1',
     name: 'Arpita',
     phone,
+    whatsappPhone: '',
+    whatsappOptIn: false,
     email: '',
     qrId: 'qr_1',
     outstanding: 0,
@@ -131,7 +133,11 @@ describe('a customer with no number', () => {
 
     await waitFor(() => expect(patch).toHaveBeenCalledTimes(1));
     // The existing record, not a new customer and not a store of its own.
-    expect(patch).toHaveBeenCalledWith('/customers/cus_1', { phone: '9876543210' });
+    expect(patch).toHaveBeenCalledWith('/customers/cus_1', {
+      phone: '9876543210',
+      whatsappPhone: '',
+      whatsappOptIn: false,
+    });
   });
 
   it('re-reads the customer afterwards instead of believing itself', async () => {
@@ -197,6 +203,24 @@ describe('what the shopkeeper types', () => {
 
     expect(await screen.findByText(/valid 10-digit mobile number/i)).toBeInTheDocument();
     expect(patch).not.toHaveBeenCalled();
+  });
+
+  it('still saves for a record written before WhatsApp fields existed', async () => {
+    /**
+     * Those customers come back with no `whatsappPhone` key at all.
+     *
+     * Treating `undefined` as "not empty" made the optional WhatsApp field
+     * fail its own validation, which blocked saving the ordinary phone number
+     * — a field the shopkeeper had filled in correctly, refused because of a
+     * second field they had never seen.
+     */
+    customer = { ...makeCustomer(''), whatsappPhone: undefined, whatsappOptIn: undefined };
+    await mount();
+    openAdd();
+    fireEvent.change(field(), { target: { value: '9876543210' } });
+    fireEvent.click(screen.getByRole('button', { name: /save number/i }));
+
+    await waitFor(() => expect(patch).toHaveBeenCalledTimes(1));
   });
 
   it('keeps letters out of the field entirely', async () => {

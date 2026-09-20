@@ -290,6 +290,8 @@ export async function seedDemoShop(
     vendorId,
     name,
     phone: phoneFor(index),
+    whatsappPhone: '',
+    whatsappOptIn: false,
     email: '',
     qrId: newQrId(),
     outstanding: 0,

@@ -224,7 +224,12 @@
     "phonePlaceholder": "கைபேசி எண்ணை உள்ளிடவும்",
     "saveNumber": "எண்ணைச் சேமி",
     "phoneInvalid": "சரியான 10 இலக்க கைபேசி எண்ணை உள்ளிடவும்.",
-    "callCustomer": "{name} ஐ அழைக்கவும்"
+    "callCustomer": "{name} ஐ அழைக்கவும்",
+    "whatsappNumber": "வாட்ஸ்அப் எண்",
+    "whatsappSame": "மேலே உள்ளதே",
+    "whatsappHint": "வாட்ஸ்அப் வேறு எண்ணில் இருந்தால் மட்டும்",
+    "whatsappOptIn": "வாட்ஸ்அப்பில் செய்தி அனுப்பலாம்",
+    "whatsappOptInHint": "ஒப்புக்கொண்டவர்களுக்கு மட்டுமே நினைவூட்டல் செல்லும்."
   },
   "sales": {
     "title": "விற்பனை",

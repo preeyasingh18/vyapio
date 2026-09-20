@@ -142,8 +142,56 @@ export const config = {
   notifications: {
     provider: (str('NOTIFICATION_PROVIDER') ?? 'mock') as 'mock' | 'sns' | 'whatsapp',
     snsTopicArn: str('SNS_TOPIC_ARN'),
-    whatsappToken: str('WHATSAPP_TOKEN'),
+
+    /**
+     * WhatsApp Business Cloud API.
+     *
+     * `WHATSAPP_ACCESS_TOKEN` is the name Meta's own documentation uses.
+     * `WHATSAPP_TOKEN` is read as a fallback because that is what this project
+     * shipped with, and a deployment that already sets it must not break on
+     * the day it pulls this change.
+     *
+     * None of these reach the browser: the token is read here, used in
+     * services/notifications.ts, and never returned by any route. See the
+     * status endpoint in routes/payments.ts for what the UI is told instead.
+     */
+    whatsappToken: str('WHATSAPP_ACCESS_TOKEN') ?? str('WHATSAPP_TOKEN'),
     whatsappPhoneNumberId: str('WHATSAPP_PHONE_NUMBER_ID'),
+    whatsappBusinessAccountId: str('WHATSAPP_BUSINESS_ACCOUNT_ID'),
+    whatsappApiVersion: str('WHATSAPP_API_VERSION') ?? 'v21.0',
+
+    /**
+     * The approved template for a business-initiated payment reminder.
+     *
+     * Without one, Meta only accepts free-form text inside a 24-hour window
+     * opened by the customer writing first — which a shopkeeper chasing money
+     * does not have. So when this is unset the provider says it cannot deliver
+     * rather than sending something Meta will reject.
+     */
+    whatsappTemplate: str('WHATSAPP_PAYMENT_REMINDER_TEMPLATE'),
+    whatsappTemplateLanguage: str('WHATSAPP_TEMPLATE_LANGUAGE_CODE') ?? 'en',
+
+    /**
+     * Which template variables to fill, in order.
+     *
+     * Meta templates are positional — {{1}}, {{2}} — so the only thing that
+     * matters is the order, and that has to match whatever was approved. The
+     * default suits "Hi {{1}}, {{2}} is pending from {{3}}."; change it here
+     * rather than in code when the approved template differs.
+     */
+    whatsappTemplateParams: (str('WHATSAPP_TEMPLATE_PARAMS') ?? 'customerName,amount,shopName')
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean),
+
+    /**
+     * Whether a customer must have opted in before anything is sent.
+     *
+     * Off by default so existing shops keep working exactly as before. Turn it
+     * on to enforce opt-in, and reminders for customers who have not opted in
+     * are recorded and skipped rather than delivered.
+     */
+    whatsappRequireOptIn: bool('WHATSAPP_REQUIRE_OPT_IN', false),
   },
 
   demo: {

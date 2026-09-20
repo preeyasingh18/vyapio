@@ -230,7 +230,12 @@
     "phonePlaceholder": "मोबाइल नंबर डालें",
     "saveNumber": "नंबर सेव करें",
     "phoneInvalid": "सही 10 अंकों का मोबाइल नंबर डालें।",
-    "callCustomer": "{name} को कॉल करें"
+    "callCustomer": "{name} को कॉल करें",
+    "whatsappNumber": "व्हाट्सएप नंबर",
+    "whatsappSame": "ऊपर वाला ही",
+    "whatsappHint": "सिर्फ़ तब जब व्हाट्सएप दूसरे नंबर पर हो",
+    "whatsappOptIn": "व्हाट्सएप पर संदेश भेज सकते हैं",
+    "whatsappOptInHint": "रिमाइंडर सिर्फ़ उन्हीं ग्राहकों को जाते हैं जिन्होंने हाँ कहा है।"
   },
   "sales": {
     "title": "बिक्री",

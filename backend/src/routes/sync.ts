@@ -85,6 +85,8 @@ syncRoutes.post('/', async (ctx) => {
             vendorId,
             name: parsed.data.name,
             phone: parsed.data.phone,
+            whatsappPhone: '',
+            whatsappOptIn: false,
             email: parsed.data.email,
             qrId: newQrId(),
             outstanding: 0,

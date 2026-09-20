@@ -243,7 +243,12 @@
     "phonePlaceholder": "Enter mobile number",
     "saveNumber": "Save number",
     "phoneInvalid": "Enter a valid 10-digit mobile number.",
-    "callCustomer": "Call {name}"
+    "callCustomer": "Call {name}",
+    "whatsappNumber": "WhatsApp number",
+    "whatsappSame": "Same as above",
+    "whatsappHint": "Only if their WhatsApp is on a different number",
+    "whatsappOptIn": "Can be messaged on WhatsApp",
+    "whatsappOptInHint": "Payment reminders are only sent to customers who agreed to them."
   },
   "sales": {
     "title": "Sales",

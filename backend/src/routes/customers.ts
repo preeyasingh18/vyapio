@@ -126,6 +126,8 @@ customerRoutes.post('/', async (ctx) => {
     vendorId,
     name: input.name,
     phone: input.phone,
+    whatsappPhone: input.whatsappPhone,
+    whatsappOptIn: input.whatsappOptIn,
     email: input.email,
     // Reuse the scanned token when creating from an unrecognised QR, so the
     // card the customer already holds keeps working.

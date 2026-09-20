@@ -224,7 +224,12 @@
     "phonePlaceholder": "मोबाइल नंबर टाका",
     "saveNumber": "नंबर सेव्ह करा",
     "phoneInvalid": "बरोबर 10 अंकी मोबाइल नंबर टाका.",
-    "callCustomer": "{name} यांना कॉल करा"
+    "callCustomer": "{name} यांना कॉल करा",
+    "whatsappNumber": "व्हॉट्सॲप नंबर",
+    "whatsappSame": "वरचाच",
+    "whatsappHint": "फक्त व्हॉट्सॲप दुसऱ्या नंबरवर असेल तर",
+    "whatsappOptIn": "व्हॉट्सॲपवर संदेश पाठवू शकतो",
+    "whatsappOptInHint": "ज्यांनी होकार दिला आहे त्यांनाच स्मरणपत्र जातात."
   },
   "sales": {
     "title": "विक्री",
