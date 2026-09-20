@@ -1,0 +1,72 @@
+{
+  // Use the workspace TypeScript, not VS Code's bundled version — otherwise
+  // the editor and `npm run typecheck` can disagree.
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "typescript.updateImportsOnFileMove.enabled": "always",
+  "typescript.preferences.preferTypeOnlyAutoImports": true,
+
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "never"
+  },
+  "editor.rulers": [100],
+  "editor.tabSize": 2,
+
+  "eslint.workingDirectories": [
+    { "directory": "backend", "changeProcessCWD": true },
+    { "directory": "frontend", "changeProcessCWD": true }
+  ],
+  "eslint.validate": ["javascript", "typescript", "typescriptreact"],
+
+  // Tailwind v4 keeps its theme in CSS, so the extension needs pointing at it.
+  "tailwindCSS.experimental.configFile": "frontend/src/styles/index.css",
+  "tailwindCSS.includeLanguages": { "typescriptreact": "javascript" },
+  "tailwindCSS.classAttributes": ["class", "className", "classNames"],
+  // Pick up classes inside cn()/cva() helpers.
+  "tailwindCSS.experimental.classRegex": [
+    ["cva\(([^)]*)\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+    ["cn\(([^)]*)\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
+  ],
+  "css.validate": false,
+  "editor.quickSuggestions": { "strings": "on" },
+
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/cdk.out": true,
+    "**/.vyapio-data": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/cdk.out": true,
+    "**/package-lock.json": true,
+    "**/.vyapio-data": true
+  },
+  "files.associations": { "*.css": "tailwindcss" },
+  "files.eol": "\n",
+
+  "cSpell.words": [
+    "aata",
+    "agentcore",
+    "atta",
+    "baaki",
+    "bharat",
+    "chawal",
+    "cheeni",
+    "daal",
+    "khata",
+    "kirana",
+    "namak",
+    "paise",
+    "sabun",
+    "textract",
+    "udhaar",
+    "vyapio",
+    "zxing"
+  ]
+}

@@ -1,0 +1,139 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Dev: everything",
+      "detail": "API on :4000 and the app on :5173",
+      "type": "npm",
+      "script": "dev",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "group": { "kind": "build", "isDefault": true }
+    },
+    {
+      "label": "Dev: API only",
+      "type": "npm",
+      "script": "dev:backend",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Dev: app only",
+      "type": "npm",
+      "script": "dev:frontend",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Seed demo shop",
+      "detail": "Rebuilds Sharma Stores with fresh data",
+      "type": "shell",
+      "command": "npm run seed -- --reset",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+
+    {
+      "label": "Typecheck",
+      "detail": "Backend, frontend and infrastructure",
+      "type": "npm",
+      "script": "typecheck",
+      "problemMatcher": ["$tsc"],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Lint",
+      "type": "npm",
+      "script": "lint",
+      "problemMatcher": ["$eslint-stylish"],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Test",
+      "detail": "Backend and frontend suites",
+      "type": "npm",
+      "script": "test",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "group": { "kind": "test", "isDefault": true }
+    },
+    {
+      "label": "Verify",
+      "detail": "Typecheck, lint, test and build — run this before pushing",
+      "type": "npm",
+      "script": "verify",
+      "problemMatcher": ["$tsc"],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+
+    {
+      "label": "Build: app",
+      "type": "npm",
+      "script": "build:frontend",
+      "problemMatcher": ["$tsc"],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Build: API bundle",
+      "type": "npm",
+      "script": "build:backend",
+      "problemMatcher": ["$tsc"],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "Build: Docker image",
+      "detail": "Requires Docker to be running",
+      "type": "npm",
+      "script": "docker:build",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+
+    {
+      "label": "AWS: who am I",
+      "detail": "Check the account and region BEFORE deploying",
+      "type": "shell",
+      "command": "aws sts get-caller-identity && aws configure get region",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "CDK: synth",
+      "type": "npm",
+      "script": "cdk:synth",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "CDK: diff",
+      "detail": "What would change if you deployed right now",
+      "type": "npm",
+      "script": "cdk:diff",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    },
+    {
+      "label": "CDK: deploy",
+      "detail": "Creates real AWS resources that cost real money",
+      "type": "npm",
+      "script": "cdk:deploy",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      // Force a look at the diff first. Deploying blind is how you discover a
+      // table replacement in production.
+      "dependsOn": ["AWS: who am I", "CDK: diff"],
+      "dependsOrder": "sequence"
+    },
+    {
+      "label": "CDK: bootstrap",
+      "detail": "Once per account and region, before the first deploy",
+      "type": "npm",
+      "script": "cdk:bootstrap",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared" }
+    }
+  ]
+}

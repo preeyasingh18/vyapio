@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Vyapio</title>
+  <!--
+    Maskable variant.
+
+    Android crops this to a circle, squircle or rounded square depending on the
+    launcher, so the mark sits well inside the 80% safe zone and the deep plum
+    runs to the edges. A transparent maskable icon gets a white plate added
+    underneath by the system, which is how an app ends up looking unfinished on
+    someone's home screen.
+
+    White bars rather than plum ones: at 48px on a dark launcher the mark has to
+    survive being small, and contrast is the only thing that carries it there.
+  -->
+  <rect width="512" height="512" fill="#2B2439" />
+  <g transform="translate(256 256) rotate(-9) translate(-256 -256)">
+    <rect x="164" y="205" width="52" height="102" rx="26" fill="#FFFFFF" />
+    <rect x="230" y="184" width="52" height="144" rx="26" fill="#FFFFFF" />
+    <rect x="296" y="163" width="52" height="186" rx="26" fill="#FFFFFF" />
+  </g>
+</svg>

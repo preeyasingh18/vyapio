@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" width="600" height="800" role="img" aria-label="A neighbourhood shop at dusk">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2A1A3E" />
+      <stop offset="55%" stop-color="#6B3A52" />
+      <stop offset="100%" stop-color="#E8905A" />
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFD9A0" stop-opacity="0.95" />
+      <stop offset="100%" stop-color="#E86A33" stop-opacity="0.25" />
+    </linearGradient>
+    <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#18181B" stop-opacity="0" />
+      <stop offset="100%" stop-color="#18181B" stop-opacity="0.72" />
+    </linearGradient>
+  </defs>
+
+  <rect width="600" height="800" fill="url(#sky)" />
+
+  <!-- Distant rooftops -->
+  <g fill="#241729" opacity="0.85">
+    <rect x="0" y="330" width="120" height="180" />
+    <rect x="110" y="368" width="96" height="142" />
+    <rect x="196" y="318" width="132" height="192" />
+    <rect x="318" y="356" width="104" height="154" />
+    <rect x="412" y="330" width="188" height="180" />
+  </g>
+
+  <!-- Shop front -->
+  <rect x="62" y="430" width="476" height="330" fill="#1C1420" />
+  <rect x="62" y="430" width="476" height="24" fill="#E86A33" opacity="0.8" />
+
+  <!-- Awning -->
+  <g>
+    <rect x="48" y="454" width="504" height="44" fill="#D6A83A" />
+    <g fill="#B8891F">
+      <rect x="48" y="454" width="42" height="44" />
+      <rect x="132" y="454" width="42" height="44" />
+      <rect x="216" y="454" width="42" height="44" />
+      <rect x="300" y="454" width="42" height="44" />
+      <rect x="384" y="454" width="42" height="44" />
+      <rect x="468" y="454" width="42" height="44" />
+    </g>
+  </g>
+
+  <!-- Lit interior -->
+  <rect x="96" y="512" width="408" height="248" fill="url(#glow)" />
+
+  <!-- Shelves and stock -->
+  <g fill="#8C5A2B" opacity="0.55">
+    <rect x="120" y="556" width="360" height="9" />
+    <rect x="120" y="624" width="360" height="9" />
+    <rect x="120" y="692" width="360" height="9" />
+  </g>
+  <g fill="#5A3419" opacity="0.62">
+    <rect x="134" y="522" width="26" height="34" rx="3" />
+    <rect x="170" y="528" width="22" height="28" rx="3" />
+    <rect x="202" y="518" width="30" height="38" rx="3" />
+    <rect x="248" y="526" width="24" height="30" rx="3" />
+    <rect x="286" y="520" width="28" height="36" rx="3" />
+    <rect x="330" y="530" width="20" height="26" rx="3" />
+    <rect x="364" y="522" width="26" height="34" rx="3" />
+    <rect x="404" y="528" width="24" height="28" rx="3" />
+    <rect x="140" y="592" width="30" height="32" rx="3" />
+    <rect x="184" y="588" width="26" height="36" rx="3" />
+    <rect x="224" y="596" width="22" height="28" rx="3" />
+    <rect x="262" y="590" width="28" height="34" rx="3" />
+    <rect x="306" y="594" width="24" height="30" rx="3" />
+    <rect x="348" y="588" width="30" height="36" rx="3" />
+    <rect x="394" y="592" width="26" height="32" rx="3" />
+  </g>
+
+  <!-- Counter -->
+  <rect x="96" y="706" width="408" height="54" fill="#3A2416" />
+  <rect x="96" y="706" width="408" height="8" fill="#5A3A22" />
+
+  <!-- Shopkeeper silhouette behind the counter -->
+  <g fill="#1A1016" opacity="0.92">
+    <circle cx="214" cy="656" r="25" />
+    <path d="M176 706c0-23 17-40 38-40s38 17 38 40z" />
+  </g>
+
+  <!-- Customer silhouette, foreground -->
+  <g fill="#120B10" opacity="0.95">
+    <circle cx="398" cy="668" r="23" />
+    <path d="M362 760c0-24 16-44 36-44s36 20 36 44z" />
+  </g>
+
+  <rect width="600" height="800" fill="url(#shade)" />
+</svg>

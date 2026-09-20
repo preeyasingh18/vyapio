@@ -1,0 +1,32 @@
+{
+  "name": "@vyapio/infrastructure",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vyapio AWS infrastructure — CDK v2.",
+  "bin": {
+    "vyapio": "bin/vyapio.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "typecheck": "tsc --noEmit",
+    "synth": "cdk synth",
+    "diff": "cdk diff",
+    "deploy": "cdk deploy --all",
+    "destroy": "cdk destroy --all",
+    "bootstrap": "cdk bootstrap",
+    "whoami": "aws sts get-caller-identity"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.270.0",
+    "constructs": "^10.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.6",
+    "@types/source-map-support": "^0.5.10",
+    "aws-cdk": "^2.1142.0",
+    "source-map-support": "^0.5.21",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}

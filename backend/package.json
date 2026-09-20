@@ -1,0 +1,47 @@
+{
+  "name": "@vyapio/backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vyapio API — one modular Lambda, packaged as a Docker image.",
+  "type": "module",
+  "main": "dist/handler.js",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=../.env --env-file-if-exists=.env src/local-server.ts",
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src scripts tests",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "seed": "tsx --env-file-if-exists=../.env --env-file-if-exists=.env scripts/seed.ts",
+    "seed:inventory": "tsx --env-file-if-exists=../.env --env-file-if-exists=.env scripts/seed-inventory.ts",
+    "lock": "npm install --package-lock-only --prefix .",
+    "db:create": "tsx --env-file-if-exists=../.env --env-file-if-exists=.env scripts/create-table.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-bedrock-agent-runtime": "^3.1136.0",
+    "@aws-sdk/client-bedrock-agentcore": "^3.1136.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.1136.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.1136.0",
+    "@aws-sdk/client-dynamodb": "^3.1136.0",
+    "@aws-sdk/client-eventbridge": "^3.1136.0",
+    "@aws-sdk/client-s3": "^3.1136.0",
+    "@aws-sdk/client-sns": "^3.1136.0",
+    "@aws-sdk/client-textract": "^3.1136.0",
+    "@aws-sdk/client-transcribe-streaming": "^3.1136.0",
+    "@aws-sdk/lib-dynamodb": "^3.1136.0",
+    "@aws-sdk/s3-request-presigner": "^3.1136.0",
+    "aws-jwt-verify": "^5.2.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/aws-lambda": "^8.10.163",
+    "@types/node": "^24.13.6",
+    "esbuild": "^0.28.2",
+    "eslint": "^9.39.5",
+    "tsx": "^4.23.13",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.70.0",
+    "vitest": "^5.0.1"
+  }
+}

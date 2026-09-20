@@ -1,0 +1,65 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Vyapio — local DynamoDB.
+#
+#   docker compose up -d          start the database
+#   npm run db:create             create the table (once)
+#   npm run dev:dynamo            run the app against it
+#   docker compose down           stop it (data is kept)
+#   docker compose down -v        stop it and delete the data
+#
+# This runs the same DynamoDB engine the cloud runs, so the app takes the same
+# code path it will take once deployed: real queries, real indexes, real
+# transactional writes. The file-backed store is a re-implementation of those
+# semantics and can only ever be a good imitation of them — this is the thing
+# itself, which is what makes it a rehearsal rather than a demo.
+#
+# Data lives in a named volume, not in the container, so `docker compose down`
+# and a laptop restart both leave the shop's records where they were.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  dynamodb:
+    image: amazon/dynamodb-local:latest
+    container_name: vyapio-dynamodb
+    # -sharedDb: one database file for every credential set, so the table is
+    # there whichever dummy key the SDK or the CLI happens to send.
+    # -dbPath: written into the volume below; without it the data is in-memory
+    # and every restart is a fresh, empty shop.
+    command: -jar DynamoDBLocal.jar -sharedDb -dbPath /data
+    working_dir: /home/dynamodblocal
+    user: root
+    ports:
+      - '8000:8000'
+    volumes:
+      - dynamodb-data:/data
+    healthcheck:
+      # The service answers this without credentials; a non-empty reply means
+      # the engine is up and accepting connections.
+      test: ['CMD-SHELL', 'curl -s http://localhost:8000 >/dev/null || exit 1']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    restart: unless-stopped
+
+  # A browser view of the table, for when a number on screen needs explaining.
+  # Optional: `docker compose up -d dynamodb` starts the database alone.
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin:latest
+    container_name: vyapio-dynamodb-admin
+    ports:
+      - '8001:8001'
+    environment:
+      # Inside the compose network the database is reachable by service name.
+      DYNAMO_ENDPOINT: http://dynamodb:8000
+      AWS_REGION: ap-south-1
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+    depends_on:
+      dynamodb:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  dynamodb-data:
+    name: vyapio-dynamodb-data

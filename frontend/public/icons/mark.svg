@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <title>Vyapio</title>
+  <!--
+    The brand mark: three bars of rising height, tilted.
+
+    Same geometry as the wordmark's symbol in src/components/brand/Logo.tsx —
+    equal widths, a gap of half a width, heights stepping up, and a 9° tilt.
+    Keep the two in step: this is the same object at a different size, and a
+    favicon that has quietly drifted from the logo is worse than no favicon.
+
+    The tilt is what stops three upright bars reading as a signal-strength
+    meter. Rising, leaning bars read as a small shop growing.
+  -->
+  <g transform="rotate(-9 50 50)">
+    <rect x="22" y="33" width="14" height="34" rx="7" fill="#76609F" />
+    <rect x="43" y="26" width="14" height="48" rx="7" fill="#76609F" />
+    <rect x="64" y="19" width="14" height="62" rx="7" fill="#76609F" />
+  </g>
+</svg>

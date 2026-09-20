@@ -1,0 +1,45 @@
+{
+  "name": "vyapio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vyapio — an AI-powered operating memory for neighbourhood businesses.",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "workspaces": [
+    "frontend",
+    "backend",
+    "infrastructure"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev:frontend": "npm --workspace frontend run dev",
+    "dev:backend": "npm --workspace backend run dev",
+    "seed": "npm --workspace backend run seed --",
+    "seed:inventory": "npm --workspace backend run seed:inventory --",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:frontend": "npm --workspace frontend run build",
+    "build:backend": "npm --workspace backend run build",
+    "preview": "npm --workspace frontend run preview",
+    "typecheck": "npm --workspace backend run typecheck && npm --workspace frontend run typecheck && npm --workspace infrastructure run typecheck",
+    "lint": "npm --workspace backend run lint && npm --workspace frontend run lint",
+    "test": "npm --workspace backend run test && npm --workspace frontend run test",
+    "verify": "npm run typecheck && npm run lint && npm run test && npm run build",
+    "docker:build": "docker build -t vyapio-backend ./backend",
+    "docker:run": "docker run --rm -p 9000:8080 --env-file .env vyapio-backend",
+    "cdk:synth": "npm --workspace infrastructure run synth",
+    "cdk:diff": "npm --workspace infrastructure run diff",
+    "cdk:deploy": "npm --workspace infrastructure run deploy",
+    "cdk:bootstrap": "npm --workspace infrastructure run bootstrap",
+    "db:create": "npm --workspace backend run db:create --",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:reset": "docker compose down -v && docker compose up -d",
+    "db:logs": "docker compose logs -f dynamodb"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5",
+    "typescript": "^5.9.3"
+  }
+}

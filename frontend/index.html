@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en" class="antialiased">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=5" />
+
+    <title>Vyapio — Your shop. Your memory. Your AI.</title>
+    <meta
+      name="description"
+      content="Vyapio turns customers, transactions, inventory and everyday shop knowledge into one intelligent operating memory."
+    />
+
+    <!-- Theme colour follows the active scheme so the phone status bar matches. -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F8F7F4" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1B1921" />
+    <meta name="color-scheme" content="light dark" />
+
+    <!--
+      SVG first for anything that takes one, PNG behind it for Safari and older
+      Android, which ignore an SVG favicon and would otherwise fall back to a
+      blank page icon.
+    -->
+    <link rel="icon" type="image/svg+xml" href="/icons/mark.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <script>
+      // Applied before first paint so a dark-mode user never sees a white flash.
+      (function () {
+        try {
+          var stored = localStorage.getItem('vyapio.theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var dark = stored === 'dark' || (stored !== 'light' && prefersDark);
+          document.documentElement.classList.toggle('dark', dark);
+        } catch (e) {
+          /* private mode: fall back to the media query in CSS */
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
