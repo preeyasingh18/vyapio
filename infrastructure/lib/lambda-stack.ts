@@ -162,6 +162,15 @@ export class LambdaStack extends Stack {
           'cognito-idp:ForgotPassword',
           'cognito-idp:ConfirmForgotPassword',
           'cognito-idp:GlobalSignOut',
+          /**
+           * Reads back the `sub` after a signup is confirmed.
+           *
+           * That id is what every later request arrives with, so the shop has
+           * to be created against it. Without this the confirm step failed
+           * immediately after Cognito had already confirmed the account —
+           * leaving a shopkeeper who could sign in and had no shop.
+           */
+          'cognito-idp:AdminGetUser',
         ],
         resources: [props.userPool.userPoolArn],
       }),

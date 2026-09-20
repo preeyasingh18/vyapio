@@ -302,11 +302,36 @@ authRoutes.post('/confirm', async (ctx) => {
     try {
       await authService.confirmSignup(email, input.code);
     } catch (error) {
-      ctx.logger.warn('verification code rejected by Cognito', {
+      const name = error instanceof Error ? error.name : '';
+
+      /**
+       * Already confirmed, and still here — so the shop never got created.
+       *
+       * Confirming and creating the shop are two steps against two systems,
+       * and anything failing between them stranded the account: Cognito would
+       * let them sign in, and there would be nothing to sign in to. A second
+       * attempt then hit this same branch and refused, which made the state
+       * permanent.
+       *
+       * Falling through repairs it. The pending record below is the proof
+       * this signup is genuinely unfinished — it is deleted on success, so
+       * there is nothing here to repair once it has worked.
+       */
+      const alreadyConfirmed =
+        name === 'NotAuthorizedException' || name === 'ExpiredCodeException';
+
+      if (!alreadyConfirmed) {
+        ctx.logger.warn('verification code rejected by Cognito', {
+          operation: 'auth.confirm',
+          reason: name || 'unknown',
+        });
+        throw cognitoCodeError(error);
+      }
+
+      ctx.logger.info('account already confirmed; finishing the shop', {
         operation: 'auth.confirm',
-        reason: error instanceof Error ? error.name : 'unknown',
+        reason: name,
       });
-      throw cognitoCodeError(error);
     }
   } else {
     const outcome = await checkCode(email, input.code);

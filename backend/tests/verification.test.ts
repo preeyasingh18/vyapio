@@ -187,6 +187,43 @@ describe('entering the code', () => {
     }
   });
 
+  it('finishes a signup Cognito already confirmed but that has no shop', async () => {
+    /**
+     * Confirming the account and creating the shop are two steps against two
+     * systems. Anything failing between them stranded the shopkeeper: Cognito
+     * would let them sign in, and there was nothing to sign in to. Trying
+     * again hit the same branch and was refused, which made it permanent.
+     *
+     * The pending record is what says this signup is unfinished — it is
+     * deleted on success, so there is nothing to repair once it has worked.
+     */
+    const { authService } = await import('../src/services/auth');
+    const { vendors } = await import('../src/services/repository');
+
+    await signup();
+
+    const mode = vi.spyOn(authService, 'mode').mockReturnValue('aws');
+    const alreadyDone = Object.assign(new Error('already confirmed'), {
+      name: 'NotAuthorizedException',
+    });
+    const confirmed = vi.spyOn(authService, 'confirmSignup').mockRejectedValue(alreadyDone);
+    const found = vi
+      .spyOn(authService, 'findByEmail')
+      .mockResolvedValue({ userId: 'cognito-sub-stranded' });
+
+    try {
+      const response = await confirm('000000');
+      expect(response.status).toBe(200);
+
+      const vendor = await vendors.findByUserId('cognito-sub-stranded');
+      expect(vendor?.shopName).toBe('Anil Stores');
+    } finally {
+      mode.mockRestore();
+      confirmed.mockRestore();
+      found.mockRestore();
+    }
+  });
+
   it('reports what Cognito said about a bad code', async () => {
     const { authService } = await import('../src/services/auth');
     await signup();
