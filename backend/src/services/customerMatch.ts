@@ -1,4 +1,5 @@
 import { customers as customerRepo } from './repository';
+import { devanagariToName, hasDevanagari } from '../utils/transliterate';
 import type { Customer } from '../schemas/entities';
 
 /**
@@ -33,9 +34,18 @@ export type CustomerMatch =
   /** Nobody does, so this is someone new. */
   | { kind: 'none' };
 
-/** Trims, lowercases and collapses runs of spaces. */
+/**
+ * Trims, lowercases, collapses spaces — and romanises Devanagari.
+ *
+ * The script a name is written in is not part of who the person is. A shop
+ * that has been running a while has both: customers typed in as "Priya" and
+ * customers captured from Hindi dictation as "प्रिया". Comparing the raw
+ * strings makes those two different people, and the second one gets a fresh
+ * set of books with none of the money owed on it.
+ */
 function normalise(name: string): string {
-  return name.trim().toLowerCase().replace(/\s+/g, ' ');
+  const latin = hasDevanagari(name) ? devanagariToName(name) : name;
+  return latin.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
 /**

@@ -836,6 +836,30 @@ describe('matching a customer by name', () => {
     expect(result.customer!.customerId).toBe(id);
   });
 
+  it('finds a Devanagari customer when the name arrives in Latin', async () => {
+    /**
+     * The script is not part of who the person is.
+     *
+     * A shop that has been running a while has both: rows captured from Hindi
+     * dictation and rows typed in Latin. This is the check that decides
+     * whether a sale joins an existing customer or starts a second set of
+     * books for the same person — with none of the money owed on it.
+     */
+    const id = await add('प्रिया');
+
+    const result = await resolve('Priya');
+    expect(result.found).toBe(true);
+    expect(result.customer!.customerId).toBe(id);
+  });
+
+  it('finds a Latin customer when the name is spoken in Hindi', async () => {
+    const id = await add('Thakur');
+
+    const result = await resolve('ठाकुर');
+    expect(result.found).toBe(true);
+    expect(result.customer!.customerId).toBe(id);
+  });
+
   it('refuses to choose between two people of the same name', async () => {
     await add('Suresh Kumar');
     await add('Suresh Yadav');
@@ -1074,5 +1098,60 @@ describe('a product named in the wrong script', () => {
     const result = parseTranscriptLocally('अर्पिता को 2 किलो शैम्पू चाहिए', SHELF);
     expect(result.items.every((item) => item.name !== 'Salt')).toBe(true);
     expect(result.items.map((item) => item.name)).not.toContain('Sugar');
+  });
+});
+
+/**
+ * Names, when the shopkeeper speaks Hindi.
+ *
+ * Dictation returns whatever script it heard, so a Hindi sale produced a
+ * customer called "प्रिया" while the same person on a bank slip, a delivery
+ * note and the rest of the customer list is "Priya". Two spellings of one
+ * person is two rows in the books, and the second one starts empty — with none
+ * of the money owed on it.
+ */
+describe('a customer named in Devanagari', () => {
+  const SHELF = { customerNames: [], productNames: ['Rice', 'Milk', 'Salt'] };
+
+  it('writes the name the way the rest of the app writes names', () => {
+    const result = parseTranscriptLocally('प्रिया को 2 किलो चावल चाहिए', SHELF);
+    expect(result.customer).toBe('Priya');
+  });
+
+  it('keeps the aspiration a name is actually spelled with', () => {
+    // The matching romanisation drops it on purpose — "Takur" is fine for
+    // comparing two spellings and useless for reading a customer list.
+    const result = parseTranscriptLocally('ठाकुर को 1 लीटर दूध चाहिए', SHELF);
+    expect(result.customer).toBe('Thakur');
+  });
+
+  it('drops the inherent vowel Hindi does not pronounce', () => {
+    // नरगीस is Nargis, not Naragis: the schwa inside a word goes when the
+    // next syllable carries its own vowel.
+    const result = parseTranscriptLocally('नरगीस को 2 किलो चावल चाहिए', SHELF);
+    expect(result.customer).toBe('Nargis');
+  });
+
+  it('leaves a name that was already in Latin alone', () => {
+    const result = parseTranscriptLocally('Suresh ko 2 kg rice chahiye', SHELF);
+    expect(result.customer).toBe('Suresh');
+  });
+
+  it('finds a customer already on the books, whichever script either used', () => {
+    // The shop has "Priya" typed in; the shopkeeper says प्रिया. One person.
+    const result = parseTranscriptLocally('प्रिया को 2 किलो चावल चाहिए', {
+      ...SHELF,
+      customerNames: ['Priya Singh'],
+    });
+    expect(result.customer).toBe('Priya Singh');
+  });
+
+  it('finds one saved in Devanagari when the name is spoken in Latin', () => {
+    // And the other way round, for the rows a shop already has.
+    const result = parseTranscriptLocally('Priya ko 2 kg rice chahiye', {
+      ...SHELF,
+      customerNames: ['प्रिया'],
+    });
+    expect(result.customer).toBe('प्रिया');
   });
 });

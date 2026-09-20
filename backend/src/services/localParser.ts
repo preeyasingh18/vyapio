@@ -1,5 +1,5 @@
 import type { ExtractedItem, ExtractedTransaction } from '../schemas/ai';
-import { hasDevanagari, phoneticKey } from '../utils/transliterate';
+import { devanagariToName, hasDevanagari, phoneticKey } from '../utils/transliterate';
 import type { PaymentMethod } from '../schemas/common';
 
 /**
@@ -483,6 +483,20 @@ export function parseTranscriptLocally(
 
 /* ---------------------------------------------------------------- Customer */
 
+/**
+ * A spoken name, written the way the rest of the app writes names.
+ *
+ * Dictation returns whatever script the shopkeeper spoke in, so a Hindi sale
+ * produced "प्रिया" while the same person on a bank slip, a delivery note and
+ * the customer list is "Priya". Two spellings of one person is two rows in the
+ * books, and the second one starts with an empty history.
+ *
+ * A name already in Latin is left exactly as it was typed.
+ */
+function asName(raw: string): string {
+  return hasDevanagari(raw) ? devanagariToName(raw) : capitalise(raw);
+}
+
 function extractCustomer(
   tokens: Token[],
   original: string,
@@ -562,7 +576,7 @@ function extractCustomer(
     const candidate = tokens[i - 1]!;
     if (candidate.value !== null) continue;
     if (isKnownWord(candidate.raw)) continue;
-    return capitalise(candidate.raw);
+    return asName(candidate.raw);
   }
 
   // English phrasing: "sold to Ramesh", "for Priya".
@@ -844,7 +858,7 @@ function extractItems(
       if (customerWords.has(token.raw)) continue;
       if (token.raw.length < 2) continue;
 
-      name = capitalise(token.raw);
+      name = asName(token.raw);
     }
 
     for (let j = i; j < i + span; j += 1) usedProductIndexes.add(j);

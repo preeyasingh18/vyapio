@@ -220,3 +220,139 @@ export function soundsLike(a: string, b: string): boolean {
 
   return left === right || left === `${right}s` || right === `${left}s`;
 }
+
+/* -------------------------------------------------- Romanising a name */
+
+/**
+ * Consonants as they are actually written in a name.
+ *
+ * Deliberately different from `CONSONANTS` above, which throws away aspiration
+ * and retroflexion because those distinctions only get in the way of matching.
+ * A name is read by a person, so here they are kept: ठाकुर is Thakur, not
+ * Takur, and a shopkeeper looking down a customer list would not recognise the
+ * second one as anybody.
+ */
+const NAME_CONSONANTS: Record<string, string> = {
+  क: 'k', ख: 'kh', ग: 'g', घ: 'gh', ङ: 'n',
+  च: 'ch', छ: 'chh', ज: 'j', झ: 'jh', ञ: 'n',
+  ट: 't', ठ: 'th', ड: 'd', ढ: 'dh', ण: 'n',
+  त: 't', थ: 'th', द: 'd', ध: 'dh', न: 'n',
+  प: 'p', फ: 'ph', ब: 'b', भ: 'bh', म: 'm',
+  य: 'y', र: 'r', ल: 'l', व: 'v',
+  श: 'sh', ष: 'sh', स: 's', ह: 'h',
+  ळ: 'l',
+  क़: 'q', ख़: 'kh', ग़: 'gh', ज़: 'z', ड़: 'r', ढ़: 'rh', फ़: 'f',
+};
+
+/**
+ * A spoken name, written the way it is spelled in English.
+ *
+ * Indian names are written in Latin far more often than they are typed in
+ * Devanagari — on a bank card, a delivery slip, a phone's contact list. A name
+ * captured from Hindi dictation and stored in the script it arrived in reads
+ * as a different person from the one already on the books, and the shopkeeper
+ * ends up with two rows for one customer.
+ *
+ * This is a best effort, not a standard. "प्रिया" comes out "Priya" and
+ * "ठाकुर" comes out "Thakur", which is what those people write. Someone whose
+ * own spelling differs can be corrected in the customer record; what matters
+ * is that the default is readable rather than a script the rest of the app
+ * does not use.
+ */
+export function devanagariToName(text: string): string {
+  if (!hasDevanagari(text)) return text;
+
+  let out = '';
+  /** Whether a consonant has been written in the word being built. */
+  let wordHasConsonant = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index]!;
+
+    if (/\s/.test(char)) {
+      out += char;
+      wordHasConsonant = false;
+      continue;
+    }
+
+    if (char === NUKTA) continue;
+    if (char === VIRAMA) continue;
+    if (char === ANUSVARA || char === CHANDRABINDU) {
+      out += 'n';
+      continue;
+    }
+    if (char === VISARGA) continue;
+
+    const sign = SIGNS[char];
+    if (sign !== undefined) {
+      out += sign;
+      continue;
+    }
+
+    const vowel = VOWELS[char];
+    if (vowel !== undefined) {
+      out += vowel;
+      continue;
+    }
+
+    let consonant = NAME_CONSONANTS[char];
+    if (consonant === undefined && text[index + 1] === NUKTA) {
+      consonant = NAME_CONSONANTS[char + NUKTA];
+    }
+
+    if (consonant !== undefined) {
+      out += consonant;
+
+      // The inherent 'a', dropped at the end of a word — "प्रिया" is Priya,
+      // never Priyaa, and "ठाकुर" is Thakur, never Thakura.
+      let next = text[index + 1];
+      if (next === NUKTA) next = text[index + 2];
+
+      const suppressed =
+        next === VIRAMA || (next !== undefined && SIGNS[next] !== undefined);
+      const atEnd = next === undefined || !/[ऀ-ॿ]/.test(next);
+
+      /**
+       * Schwa deletion, the rule that makes नरगीस "Nargis" and not "Naragis".
+       *
+       * Hindi drops the inherent 'a' inside a word when the syllable after it
+       * carries its own vowel — भारती is Bharti, चाँदनी is Chandni. The first
+       * consonant of a word keeps it, which is the whole difference between
+       * रमेश (Ramesh, kept) and the र in नरगीस (dropped).
+       *
+       * A heuristic, not the full rule, and it will be wrong for some names.
+       * That is recoverable — the shopkeeper can correct a customer's name —
+       * whereas spelling every name with an extra syllable is wrong every time.
+       */
+      const medial = wordHasConsonant;
+      const dropped = medial && !suppressed && !atEnd && nextSyllableHasVowel(text, index);
+
+      if (!suppressed && !atEnd && !dropped) out += 'a';
+      wordHasConsonant = true;
+      continue;
+    }
+
+    out += char;
+  }
+
+  // Each word capitalised, because that is how a name is written.
+  return out
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+/** Whether the consonant after `index` carries a vowel sign of its own. */
+function nextSyllableHasVowel(text: string, index: number): boolean {
+  let at = index + 1;
+  if (text[at] === NUKTA) at += 1;
+
+  const consonant = text[at];
+  if (consonant === undefined || NAME_CONSONANTS[consonant] === undefined) return false;
+
+  let after = text[at + 1];
+  if (after === NUKTA) after = text[at + 2];
+
+  return after !== undefined && SIGNS[after] !== undefined;
+}
