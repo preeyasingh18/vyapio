@@ -28,8 +28,8 @@
   "tailwindCSS.classAttributes": ["class", "className", "classNames"],
   // Pick up classes inside cn()/cva() helpers.
   "tailwindCSS.experimental.classRegex": [
-    ["cva\(([^)]*)\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
-    ["cn\(([^)]*)\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
+    ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+    ["cn\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
   ],
   "css.validate": false,
   "editor.quickSuggestions": { "strings": "on" },
