@@ -43,7 +43,7 @@ export function ShopScene({ className }: { className?: string }) {
          * enough to look like an arch is also tight enough to take the corners
          * off the roof.
          */
-        className="relative aspect-[8/7] w-full overflow-hidden rounded-t-[46%] rounded-b-[34px] bg-[#EAE4F7]"
+        className="relative aspect-[8/7] w-full overflow-hidden rounded-t-[46%] rounded-b-[34px] bg-[#D8CFF3]"
       >
         <span className="absolute top-7 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 text-[9px] font-semibold tracking-[0.16em] whitespace-nowrap text-[#9987ac] uppercase sm:top-7 sm:text-[10px]">
           <Store className="size-3" aria-hidden="true" />
@@ -53,17 +53,18 @@ export function ShopScene({ className }: { className?: string }) {
         <img
           src="/images/shop.webp"
           /**
-           * `multiply` is what makes the shop sit *in* the arch.
+           * The arch is the artwork's own backdrop colour, so the rectangle
+           * has nothing to show against.
            *
-           * The artwork carries its own lavender ground, so dropping it in as
-           * an opaque rectangle left its four corners showing against the arch
-           * — two lavenders meeting at a hard edge. Multiplying blends that
-           * ground into the arch behind it: identical values cancel out, the
-           * shop and its shadow stay, and the rectangle disappears.
+           * This used to be `mix-blend-multiply` over a lighter arch, on the
+           * theory that identical values would cancel out. They do not:
+           * multiply darkens by the backdrop, so the area under the image came
+           * out about 7% darker than the arch around it and the picture's top
+           * edge read as a band across the lavender.
            *
-           * The arch is set a shade lighter than the artwork's ground for the
-           * same reason — multiply only ever darkens, so the arch has to start
-           * above the value it needs to end at.
+           * The backdrop is now shifted to this exact colour in the file
+           * itself — see the note in the commit — leaving one flat lavender
+           * either side of an edge that is no longer visible.
            *
            * `contain` keeps the whole shop in frame.
            *
@@ -75,7 +76,7 @@ export function ShopScene({ className }: { className?: string }) {
            * Anchored to the bottom with room reserved above, so the label at
            * the top of the arch has somewhere to sit that is not the roof.
            */
-          className="absolute inset-0 size-full object-contain object-bottom px-[2%] pt-[9%] pb-0 mix-blend-multiply"
+          className="absolute inset-0 size-full object-contain object-bottom px-[10%] pt-[15%] pb-[6%]"
           alt="A miniature neighbourhood grocery shop with a lavender awning, crates of fruit and a bicycle outside"
           width={1200}
           height={1026}
