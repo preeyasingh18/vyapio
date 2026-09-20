@@ -116,7 +116,8 @@
     "signInInstead": "साइन इन करें",
     "demoTitle": "बस देखना है?",
     "demoBody": "शर्मा स्टोर्स खोलिए — ग्राहक, बिक्री और बाकी भुगतान के साथ एक असली दुकान।",
-    "demoButton": "डेमो दुकान खोलें"
+    "demoButton": "डेमो दुकान खोलें",
+    "openingShop": "आपकी दुकान खुल रही है…"
   },
   "onboarding": {
     "step": "चरण {current} / {total}",

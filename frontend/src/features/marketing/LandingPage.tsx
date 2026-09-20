@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { OpeningShop } from '@/components/brand/OpeningShop';
+import { atLeast } from '@/lib/atLeast';
 import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
@@ -49,17 +51,20 @@ export default function LandingPage() {
   const openDemo = async () => {
     setLoadingDemo(true);
     try {
-      await demoLogin();
+      await atLeast(demoLogin());
       navigate('/app');
     } catch {
       toast.error('Could not open the demo shop', 'Check that the API is running, then try again.');
-    } finally {
+      // Only on failure: on success the overlay stays up until the dashboard
+      // replaces this page, so there is no flash of the landing page between.
       setLoadingDemo(false);
     }
   };
 
   return (
     <PageTransition className="min-h-dvh bg-[var(--color-bg)]">
+      <OpeningShop show={loadingDemo} />
+
       {/* ── Nav ─────────────────────────────────────────────────────────── */}
       <header className="glass sticky top-0 z-40 border-b border-[var(--color-line)]/70">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">

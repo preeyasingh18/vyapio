@@ -180,7 +180,8 @@
     "signIn": "ಸೈನ್ ಇನ್",
     "signUp": "ಖಾತೆ ರಚಿಸಿ",
     "forgotPassword": "ಪಾಸ್‌ವರ್ಡ್ ಮರೆತಿರಾ?",
-    "demoButton": "ಡೆಮೋ ಅಂಗಡಿ ತೆರೆಯಿರಿ"
+    "demoButton": "ಡೆಮೋ ಅಂಗಡಿ ತೆರೆಯಿರಿ",
+    "openingShop": "ನಿಮ್ಮ ಅಂಗಡಿ ತೆರೆಯುತ್ತಿದೆ…"
   },
   "customers": {
     "title": "ಗ್ರಾಹಕರು",

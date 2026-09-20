@@ -1,4 +1,6 @@
 import { useState, type FormEvent } from 'react';
+import { OpeningShop } from '@/components/brand/OpeningShop';
+import { atLeast } from '@/lib/atLeast';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowRight, Store } from 'lucide-react';
 import { AuthLayout } from './AuthLayout';
@@ -28,18 +30,17 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      await login(email, password);
+      await atLeast(login(email, password));
       navigate(destination, { replace: true });
     } catch (caught) {
       const apiError = caught instanceof ApiError ? caught : null;
       setError(apiError);
+      setLoading(false);
 
       // An unverified account needs the code screen, not a red message.
       if (apiError?.status === 403) {
         navigate('/verify', { state: { email } });
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -47,16 +48,17 @@ export default function LoginPage() {
     setDemoLoading(true);
     setError(null);
     try {
-      await demoLogin();
+      await atLeast(demoLogin());
       navigate('/app', { replace: true });
     } catch (caught) {
       setError(caught instanceof ApiError ? caught : null);
-    } finally {
       setDemoLoading(false);
     }
   };
 
   return (
+    <>
+      <OpeningShop show={loading || demoLoading} />
     <AuthLayout
       title={t('auth.loginTitle')}
       subtitle={t('auth.loginSubtitle')}
@@ -143,5 +145,6 @@ export default function LoginPage() {
         </div>
       ) : null}
     </AuthLayout>
+    </>
   );
 }

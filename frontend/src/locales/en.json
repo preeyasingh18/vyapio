@@ -124,7 +124,8 @@
     "signInInstead": "Sign in",
     "demoTitle": "Just looking?",
     "demoBody": "Open Sharma Stores — a real seeded shop with customers, sales and pending payments.",
-    "demoButton": "Open the demo shop"
+    "demoButton": "Open the demo shop",
+    "openingShop": "Opening your shop…"
   },
   "onboarding": {
     "step": "Step {current} of {total}",

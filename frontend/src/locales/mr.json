@@ -180,7 +180,8 @@
     "signIn": "साइन इन",
     "signUp": "खाते तयार करा",
     "forgotPassword": "पासवर्ड विसरलात?",
-    "demoButton": "डेमो दुकान उघडा"
+    "demoButton": "डेमो दुकान उघडा",
+    "openingShop": "तुमचे दुकान उघडत आहे…"
   },
   "customers": {
     "title": "ग्राहक",

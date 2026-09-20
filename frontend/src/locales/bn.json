@@ -180,7 +180,8 @@
     "signIn": "সাইন ইন",
     "signUp": "অ্যাকাউন্ট তৈরি",
     "forgotPassword": "পাসওয়ার্ড ভুলে গেছেন?",
-    "demoButton": "ডেমো দোকান খুলুন"
+    "demoButton": "ডেমো দোকান খুলুন",
+    "openingShop": "আপনার দোকান খুলছে…"
   },
   "customers": {
     "title": "ক্রেতা",
