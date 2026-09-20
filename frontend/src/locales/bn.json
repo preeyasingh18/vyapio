@@ -181,7 +181,21 @@
     "signUp": "অ্যাকাউন্ট তৈরি",
     "forgotPassword": "পাসওয়ার্ড ভুলে গেছেন?",
     "demoButton": "ডেমো দোকান খুলুন",
-    "openingShop": "আপনার দোকান খুলছে…"
+    "openingShop": "আপনার দোকান খুলছে…",
+    "verifyTitle": "আপনার ইমেল যাচাই করুন",
+    "verifySentTo": "আমরা ৬ সংখ্যার কোড পাঠিয়েছি",
+    "verifyLost": "সাইন আপ শেষ হয়নি। আবার শুরু করুন।",
+    "backToSignup": "সাইন আপে ফিরুন",
+    "verifyEmail": "ইমেল যাচাই করুন",
+    "code": "যাচাই কোড",
+    "expiresIn": "কোড শেষ হবে",
+    "codeExpired": "কোডের মেয়াদ শেষ। নতুন চান।",
+    "resendIn": "আবার পাঠান",
+    "sending": "পাঠানো হচ্ছে…",
+    "changeEmail": "ইমেল বদলান",
+    "emailVerified": "ইমেল যাচাই হয়েছে",
+    "accountCreated": "আপনার অ্যাকাউন্ট প্রস্তুত। সাইন ইন করুন।",
+    "codeSent": "নতুন কোড পাঠানো হয়েছে"
   },
   "customers": {
     "title": "ক্রেতা",

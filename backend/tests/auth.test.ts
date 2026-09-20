@@ -1,5 +1,35 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { createShop, request, resetWorld } from './helpers';
+import { setEmailProvider, type EmailMessage } from '../src/services/email';
+
+/**
+ * The verification email, captured rather than sent.
+ *
+ * The code is hashed the moment it is stored, so there is no way to read it
+ * back out of the record — which is the point. Reading it off the email is
+ * also what a person does, so the test exercises the same path they do.
+ */
+const outbox: EmailMessage[] = [];
+
+function captureEmail() {
+  outbox.length = 0;
+  setEmailProvider({
+    name: 'test-capture',
+    async send(message: EmailMessage) {
+      outbox.push(message);
+      return { ok: true, sent: true, provider: 'test-capture', detail: 'Captured.' };
+    },
+  });
+}
+
+/** The six digits the shopkeeper would type in from their inbox. */
+function codeFor(email: string): string {
+  const message = [...outbox].reverse().find((entry) => entry.to === email.toLowerCase());
+  if (!message) throw new Error(`No verification email was sent to ${email}`);
+  const match = /\b(\d{6})\b/.exec(message.text);
+  if (!match) throw new Error('That email carried no six-digit code');
+  return match[1]!;
+}
 
 /**
  * Authentication and authorization.
@@ -8,6 +38,8 @@ import { createShop, request, resetWorld } from './helpers';
  * forged tokens, role separation, and the account-enumeration surface of the
  * login and password-reset forms.
  */
+
+afterEach(() => setEmailProvider(null));
 
 describe('public endpoints', () => {
   beforeEach(() => {
@@ -92,7 +124,13 @@ describe('signup and login', () => {
     resetWorld();
   });
 
-  it('creates an account and a shop together', async () => {
+  it('creates the account and the shop once the email is verified', async () => {
+    captureEmail();
+    /**
+     * Signing up no longer creates anything. The account is written by
+     * /auth/confirm, when the code posted to the address comes back — so an
+     * address nobody owns cannot become a shop with books in it.
+     */
     const signup = await request('POST', '/auth/signup', {
       body: {
         ownerName: 'Anil Sharma',
@@ -107,6 +145,18 @@ describe('signup and login', () => {
     });
 
     expect(signup.status).toBe(201);
+    expect(signup.body.requiresVerification).toBe(true);
+
+    // Nothing to sign in to yet.
+    const early = await request('POST', '/auth/login', {
+      body: { email: 'new@test.app', password: 'Passw0rd!' },
+    });
+    expect(early.status).toBe(401);
+
+    const confirm = await request('POST', '/auth/confirm', {
+      body: { email: 'new@test.app', code: codeFor('new@test.app') },
+    });
+    expect(confirm.status).toBe(200);
 
     const login = await request('POST', '/auth/login', {
       body: { email: 'new@test.app', password: 'Passw0rd!' },
@@ -160,7 +210,8 @@ describe('signup and login', () => {
     expect(response.status).toBe(422);
   });
 
-  it('refuses a duplicate email', async () => {
+  it('refuses an email that already has an account', async () => {
+    captureEmail();
     const body = {
       ownerName: 'First',
       email: 'dupe@test.app',
@@ -170,9 +221,41 @@ describe('signup and login', () => {
     };
 
     await request('POST', '/auth/signup', { body });
-    const second = await request('POST', '/auth/signup', { body });
+    await request('POST', '/auth/confirm', {
+      body: { email: 'dupe@test.app', code: codeFor('dupe@test.app') },
+    });
 
+    const second = await request('POST', '/auth/signup', { body });
     expect(second.status).toBe(409);
+    expect(second.body.error).toMatchObject({ code: 'CONFLICT' });
+  });
+
+  it('lets an unfinished signup start over rather than blocking it', async () => {
+    /**
+     * Someone who closed the tab before entering the code has no account, so
+     * refusing them as a duplicate would lock them out of their own address
+     * with nothing to sign in to and nothing to recover.
+     */
+    captureEmail();
+    const body = {
+      ownerName: 'Second Try',
+      email: 'retry@test.app',
+      phone: '9810012388',
+      password: 'Passw0rd!',
+      shopName: 'Retry Stores',
+    };
+
+    const first = await request('POST', '/auth/signup', { body });
+    expect(first.status).toBe(201);
+
+    const again = await request('POST', '/auth/signup', { body });
+    expect(again.status).toBe(201);
+
+    // The newest code is the one that works.
+    const confirm = await request('POST', '/auth/confirm', {
+      body: { email: 'retry@test.app', code: codeFor('retry@test.app') },
+    });
+    expect(confirm.status).toBe(200);
   });
 
   it('gives the same answer for a wrong password and an unknown account', async () => {

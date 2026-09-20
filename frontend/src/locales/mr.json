@@ -181,7 +181,21 @@
     "signUp": "खाते तयार करा",
     "forgotPassword": "पासवर्ड विसरलात?",
     "demoButton": "डेमो दुकान उघडा",
-    "openingShop": "तुमचे दुकान उघडत आहे…"
+    "openingShop": "तुमचे दुकान उघडत आहे…",
+    "verifyTitle": "तुमचा ईमेल पडताळा",
+    "verifySentTo": "आम्ही 6 अंकी कोड पाठवला",
+    "verifyLost": "साइन अप पूर्ण झाले नाही. पुन्हा सुरू करा.",
+    "backToSignup": "साइन अपवर परत",
+    "verifyEmail": "ईमेल पडताळा",
+    "code": "पडताळणी कोड",
+    "expiresIn": "कोड संपेल",
+    "codeExpired": "हा कोड संपला आहे. नवीन मागा.",
+    "resendIn": "पुन्हा पाठवा",
+    "sending": "पाठवत आहे…",
+    "changeEmail": "ईमेल बदला",
+    "emailVerified": "ईमेल पडताळला",
+    "accountCreated": "तुमचे खाते तयार आहे. साइन इन करा.",
+    "codeSent": "नवीन कोड पाठवला"
   },
   "customers": {
     "title": "ग्राहक",

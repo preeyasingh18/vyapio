@@ -147,6 +147,17 @@ export const keys = {
   }),
   /** Local-auth user records live in their own partition, outside any tenant. */
   localUser: (email: string) => ({ pk: `AUTHUSER#${email.toLowerCase()}`, sk: 'PROFILE' }),
+  /**
+   * A signup waiting on its verification code.
+   *
+   * Beside the user record rather than in a table of its own: same single-table
+   * design, same partition per address, and the two can never disagree about
+   * whether an account exists because only one of them is ever written.
+   */
+  pendingSignup: (email: string) => ({
+    pk: `AUTHUSER#${email.toLowerCase()}`,
+    sk: 'PENDING_SIGNUP',
+  }),
 } as const;
 
 export const SK_PREFIX = {

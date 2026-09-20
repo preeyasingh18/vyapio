@@ -216,6 +216,55 @@ function localTokens(user: LocalUserRecord): AuthTokens {
 export const authService = {
   mode: () => config.auth.mode,
 
+  /**
+   * Hashes a password for a signup that has not been verified yet.
+   *
+   * Exposed so the pending-signup record can hold a hash rather than the
+   * password — same function login verifies against, so there is exactly one
+   * definition of what a stored password is.
+   */
+  hashNewPassword(password: string): { salt: string; hash: string } {
+    const salt = randomBytes(16).toString('base64');
+    return { salt, hash: hashPassword(password, salt) };
+  },
+
+  /** The account behind an address, or null. Used to refuse a duplicate signup. */
+  async findByEmail(email: string): Promise<{ userId: string } | null> {
+    if (config.auth.mode === 'aws') return null;
+    const user = await readLocalUser(email);
+    return user ? { userId: user.userId } : null;
+  },
+
+  /**
+   * Writes the account, with the password already hashed.
+   *
+   * The only path that creates a locally-authenticated user outside the demo
+   * seed — and it is reached only from /auth/confirm, which is what makes
+   * "no account without a verified email" true rather than merely intended.
+   */
+  async createVerifiedUser(input: {
+    email: string;
+    ownerName: string;
+    phone: string;
+    role: Role;
+    passwordSalt: string;
+    passwordHash: string;
+  }): Promise<string> {
+    const record: LocalUserRecord = {
+      userId: newUserId(),
+      email: input.email.toLowerCase(),
+      name: input.ownerName,
+      phone: input.phone,
+      role: input.role,
+      passwordSalt: input.passwordSalt,
+      passwordHash: input.passwordHash,
+      emailVerified: true,
+      createdAt: nowIso(),
+    };
+    await writeLocalUser(record);
+    return record.userId;
+  },
+
   async signup(input: SignupInput): Promise<{ userId: string; requiresVerification: boolean }> {
     if (config.auth.mode === 'aws') {
       const result = await cognito().send(
