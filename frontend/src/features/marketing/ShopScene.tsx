@@ -36,17 +36,16 @@ export function ShopScene({ className }: { className?: string }) {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         /**
-         * A plain rounded card.
+         * An arch, not a rectangle — the shape the design is drawn around.
          *
-         * This was an arch, on the theory that a rounded top would follow the
-         * shopfront. It cut the artwork's top corners off instead, and because
-         * the curve and the image's own rectangle did not agree, the edge of
-         * the picture showed through the blend. A rectangle holds the whole
-         * shop and has no seam to hide.
+         * The curve has to clear the shopfront rather than crop it, so the
+         * radius is shallow and the artwork is inset below it. An arch tight
+         * enough to look like an arch is also tight enough to take the corners
+         * off the roof.
          */
-        className="relative aspect-[8/7] w-full overflow-hidden rounded-[var(--radius-card)] bg-[#EFEBF8]"
+        className="relative aspect-[8/7] w-full overflow-hidden rounded-t-[46%] rounded-b-[34px] bg-[#EAE4F7]"
       >
-        <span className="absolute top-5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 text-[9px] font-semibold tracking-[0.16em] whitespace-nowrap text-[#9987ac] uppercase sm:top-7 sm:text-[10px]">
+        <span className="absolute top-7 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 text-[9px] font-semibold tracking-[0.16em] whitespace-nowrap text-[#9987ac] uppercase sm:top-7 sm:text-[10px]">
           <Store className="size-3" aria-hidden="true" />
           Your shop, with superpowers
         </span>
@@ -76,7 +75,7 @@ export function ShopScene({ className }: { className?: string }) {
            * Anchored to the bottom with room reserved above, so the label at
            * the top of the arch has somewhere to sit that is not the roof.
            */
-          className="absolute inset-0 size-full object-contain object-bottom pt-[12%] mix-blend-multiply"
+          className="absolute inset-0 size-full object-contain object-bottom px-[5%] pt-[11%] pb-[2%] mix-blend-multiply"
           alt="A miniature neighbourhood grocery shop with a lavender awning, crates of fruit and a bicycle outside"
           width={1200}
           height={1026}
@@ -84,61 +83,83 @@ export function ShopScene({ className }: { className?: string }) {
           decoding="async"
         />
 
-        {/* Inside the arch, where they read as part of the scene. */}
-        <span
-          className="absolute top-[18%] left-[12%] text-xl text-[var(--color-primary)]/40"
-          aria-hidden="true"
-        >
-          ✳
-        </span>
-        <span
-          className="absolute top-[26%] right-[12%] text-sm text-[var(--color-primary)]/35"
-          aria-hidden="true"
-        >
-          ✦
-        </span>
 
         {/* ── The promise, signed ───────────────────────────────────────── */}
         {/*
-          Inside the arch, on the lavender.
+          The scene's closing line, set on the lavender.
 
-          It used to hang off the outer wrapper at `-bottom-2 -left-2`, which
-          put it below and to the left of the arch on the bare cream page —
-          reading as something that had slipped out of the picture rather than
-          as part of it. Set on the same ground as the shop, it is the scene's
-          closing line.
+          Not a card: it is the scene signing itself, not a third thing
+          floating over it. It reads because the artwork is inset above it —
+          the ground it sits on is clean, which is what it lacked when it was
+          laid straight over the shop's shadow.
         */}
         <motion.div
           initial={reduceMotion ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.65 }}
-          className="absolute bottom-4 left-4 z-20 sm:bottom-5 sm:left-5"
+          className="absolute bottom-5 left-5 z-20 flex items-center gap-2.5 sm:bottom-7 sm:left-8"
         >
-          {/* A card, like the two beside it: as bare text it sat straight on
-              the artwork's shadow and could not be read. */}
-          <span className="flex items-center gap-2.5 rounded-[var(--radius-card)] bg-[var(--color-surface)] py-2.5 pr-3.5 pl-2.5 shadow-[var(--shadow-lift)]">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-[var(--color-lavender)]">
-              <LogoMark size={16} />
-            </span>
-            <span className="text-[11px] leading-tight text-[var(--color-muted)]">
-              Less to remember.
-              <br />
-              <b className="font-bold text-[var(--color-ink)]">More room to grow.</b>
-            </span>
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-[var(--color-primary)]/15">
+            <LogoMark size={16} />
+          </span>
+          <span className="text-[11px] leading-tight text-[var(--color-muted)] sm:text-[12px]">
+            Less to remember.
+            <br />
+            <b className="font-bold text-[var(--color-ink)]">More room to grow.</b>
           </span>
         </motion.div>
       </motion.div>
+
+      {/*
+        Two marks on the page, outside the arch.
+
+        Drawn rather than typed: as the characters ✳ and ✦ they fell back to
+        whatever font the machine happened to have, so their weight and even
+        their number of points changed from screen to screen.
+      */}
+      <motion.svg
+        viewBox="0 0 24 24"
+        initial={reduceMotion ? false : { opacity: 0, scale: 0.6 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, delay: 0.75 }}
+        className="absolute top-[14%] -left-1 z-0 size-7 text-[var(--color-primary)] sm:-left-4 sm:size-9"
+        aria-hidden="true"
+      >
+        <path
+          d="M12 1.5v21M2.6 6.75l18.8 10.5M21.4 6.75L2.6 17.25"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+      </motion.svg>
+
+      <motion.svg
+        viewBox="0 0 24 24"
+        initial={reduceMotion ? false : { opacity: 0, scale: 0.6 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, delay: 0.85 }}
+        className="absolute top-[22%] -right-1 z-0 size-5 text-[#E0A63C] sm:-right-3 sm:size-6"
+        aria-hidden="true"
+      >
+        {/* A four-point star: two slender lobes crossing, not a polygon. */}
+        <path
+          d="M12 1.2c.9 6 3.9 9 9.9 10.8-6 1.8-9 4.8-9.9 10.8-.9-6-3.9-9-9.9-10.8 6-1.8 9-4.8 9.9-10.8Z"
+          fill="currentColor"
+        />
+      </motion.svg>
 
       {/* ── Every customer, remembered ──────────────────────────────────── */}
       <motion.div
         initial={reduceMotion ? false : { opacity: 0, x: -18, y: 10 }}
         animate={{ opacity: 1, x: 0, y: 0 }}
         transition={{ duration: 0.5, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
-        className="absolute top-[20%] -left-3 z-10 w-[60%] max-w-[260px] sm:-left-7 lg:-left-12"
+        className="absolute top-[24%] -left-2 z-10 w-[62%] max-w-[300px] sm:-left-6 lg:-left-10"
       >
+        {/* Tilted, so the cards read as laid over the scene rather than
+            pinned to the page grid. */}
         <motion.div
           {...float(0)}
-          className="flex items-center gap-2.5 rounded-[var(--radius-card)] bg-[var(--color-surface)] py-2.5 pr-3 pl-2.5 shadow-[var(--shadow-lift)]"
+          className="flex -rotate-[4deg] items-center gap-2.5 rounded-[var(--radius-card)] bg-[var(--color-surface)] py-2.5 pr-3 pl-2.5 shadow-[var(--shadow-lift)]"
         >
           <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-[var(--color-lavender)] text-[var(--color-primary)]">
             <BrainCircuit className="size-4" aria-hidden="true" />
@@ -162,11 +183,11 @@ export function ShopScene({ className }: { className?: string }) {
         initial={reduceMotion ? false : { opacity: 0, x: 18, y: 10 }}
         animate={{ opacity: 1, x: 0, y: 0 }}
         transition={{ duration: 0.5, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="absolute -right-2 bottom-[13%] z-10 w-[56%] max-w-[240px] sm:-right-6 lg:-right-10"
+        className="absolute -right-2 bottom-[18%] z-10 w-[58%] max-w-[280px] sm:-right-5 lg:-right-8"
       >
         <motion.div
           {...float(1.4)}
-          className="flex items-center gap-2.5 rounded-[var(--radius-card)] bg-[var(--color-surface)] py-2.5 pr-3 pl-2.5 shadow-[var(--shadow-lift)]"
+          className="flex rotate-[4deg] items-center gap-2.5 rounded-[var(--radius-card)] bg-[var(--color-surface)] py-2.5 pr-3 pl-2.5 shadow-[var(--shadow-lift)]"
         >
           <span className="flex size-8 shrink-0 items-center justify-center rounded-[var(--radius-control)] bg-[var(--color-peach)] text-[var(--color-accent)]">
             <Mic className="size-4" aria-hidden="true" />
