@@ -15,14 +15,31 @@ all of it in their head.
 
 No AWS account needed. Everything below runs on a laptop.
 
+### With Docker — nothing else to install
+
+```bash
+docker compose up
+```
+
+Open <http://localhost:8080>. The app builds itself, seeds the demo shop on
+first start, and keeps its records in a named volume, so `docker compose down`
+and a laptop restart both leave the shop where it was. `docker compose down -v`
+is the one that wipes it.
+
+### With Node — for working on the code
+
 ```bash
 npm install
-cp .env.example .env
 npm run seed          # builds the demo shop, Sharma Stores
 npm run dev           # API on :4000, app on :5173
 ```
 
-Open <http://localhost:5173> and click **Try the demo shop**, or sign in with:
+`.env` is optional: without one the app runs on built-in defaults and stores
+everything in a local file. Copy `.env.example` to `.env` only when connecting
+real AWS services.
+
+Then open <http://localhost:5173> (or :8080 under Docker) and click **Try the
+demo shop**, or sign in with:
 
 ```
 demo@vyapio.app

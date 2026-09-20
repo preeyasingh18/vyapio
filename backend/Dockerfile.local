@@ -1,0 +1,42 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Vyapio API — the ordinary HTTP server, for running the app locally.
+#
+# Deliberately separate from `Dockerfile`, which packages the same code as a
+# Lambda container image for deployment. That one speaks Lambda's invocation
+# protocol and cannot serve a browser; this one is a plain server on a port.
+# Merging them would mean one image that does neither job properly.
+#
+# Used by docker-compose so someone can run the whole thing without installing
+# Node — see docker-compose.yml.
+# ─────────────────────────────────────────────────────────────────────────────
+
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Manifests first, so the dependency layer survives source edits. `npm ci`
+# installs exact locked versions and fails if the lockfile and manifest
+# disagree, which `npm install` would quietly paper over.
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+
+COPY tsconfig.json ./
+COPY src ./src
+COPY scripts ./scripts
+
+# The shop's records live here. Declared as a volume in docker-compose so they
+# survive `docker compose down` — a demo that forgets everything on restart is
+# not a demo of a shop ledger.
+ENV LOCAL_DATA_DIR=/data \
+    HOST=0.0.0.0 \
+    PORT=4000 \
+    NODE_ENV=development
+
+EXPOSE 4000
+
+# Seed before starting, then serve.
+#
+# The seed is skipped when the shop already exists, so a restart never wipes
+# what the shopkeeper entered — that behaviour lives in scripts/seed.ts, not in
+# a flag here, so it is the same whether run through Docker or not.
+CMD ["sh", "-c", "npx tsx scripts/seed.ts && npx tsx src/local-server.ts"]

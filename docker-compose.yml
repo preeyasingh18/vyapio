@@ -1,11 +1,18 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Vyapio — local DynamoDB.
+# Vyapio — the whole app, in one command.
 #
-#   docker compose up -d          start the database
-#   npm run db:create             create the table (once)
-#   npm run dev:dynamo            run the app against it
-#   docker compose down           stop it (data is kept)
+#   docker compose up             run the whole app — http://localhost:8080
+#   docker compose down           stop it (the shop's records are kept)
 #   docker compose down -v        stop it and delete the data
+#
+# Nothing else needs installing: no Node, no npm, no .env. The app builds and
+# seeds itself on first start, so `git clone` then this one command is the
+# whole setup.
+#
+# To work on the database instead of the app:
+#
+#   docker compose --profile dynamo up -d dynamodb   the database alone
+#   npm run db:create               create the table (once)
 #
 # This runs the same DynamoDB engine the cloud runs, so the app takes the same
 # code path it will take once deployed: real queries, real indexes, real
@@ -18,6 +25,58 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 services:
+  # ── The app ────────────────────────────────────────────────────────────────
+  #
+  # `web` is the only thing exposed. It serves the built app and proxies /api to
+  # `api`, which is the same shape CloudFront gives it in production — one
+  # origin, so the client uses identical URLs in both places.
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.local
+    container_name: vyapio-api
+    environment:
+      # The file-backed store, so this runs with no AWS account and no
+      # credentials. Point DYNAMODB_ENDPOINT at the dynamodb service below to
+      # rehearse against the real engine instead.
+      LOCAL_DATA_DIR: /data
+      HOST: 0.0.0.0
+      PORT: '4000'
+      CORS_ALLOWED_ORIGINS: http://localhost:8080
+      LOG_LEVEL: info
+    volumes:
+      # A named volume, so the shop's records outlive the container.
+      - vyapio-data:/data
+    healthcheck:
+      # 127.0.0.1, not localhost: the name resolves to ::1 in this image while
+      # the server binds 0.0.0.0, so the check would never connect.
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:4000/health >/dev/null || exit 1']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: vyapio-web
+    ports:
+      - '8080:80'
+    depends_on:
+      # Waits for the API to actually answer, not merely to have started —
+      # otherwise the first page load races the seed and shows an empty shop.
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── The database, for rehearsing against the real engine ───────────────────
+  #
+  # Not needed to run the app: `api` above uses the file-backed store by
+  # default. Start this when you want the code path it will take once deployed.
+
   dynamodb:
     image: amazon/dynamodb-local:latest
     container_name: vyapio-dynamodb
@@ -25,6 +84,7 @@ services:
     # there whichever dummy key the SDK or the CLI happens to send.
     # -dbPath: written into the volume below; without it the data is in-memory
     # and every restart is a fresh, empty shop.
+    profiles: ['dynamo']
     command: -jar DynamoDBLocal.jar -sharedDb -dbPath /data
     working_dir: /home/dynamodblocal
     user: root
@@ -46,6 +106,7 @@ services:
   # Optional: `docker compose up -d dynamodb` starts the database alone.
   dynamodb-admin:
     image: aaronshaf/dynamodb-admin:latest
+    profiles: ['dynamo']
     container_name: vyapio-dynamodb-admin
     ports:
       - '8001:8001'
@@ -61,5 +122,7 @@ services:
     restart: unless-stopped
 
 volumes:
+  vyapio-data:
+    name: vyapio-data
   dynamodb-data:
     name: vyapio-dynamodb-data

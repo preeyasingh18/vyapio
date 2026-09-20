@@ -1,12 +1,22 @@
+# Applies to builds using the repository root as context — the app image.
+# The API's Lambda image builds from ./backend and uses backend/.dockerignore.
+
 node_modules
+**/node_modules
 dist
+**/dist
 .git
 .env
 .env.*
 !.env.example
 *.log
 coverage
+**/coverage
 .vyapio-data
-frontend
-infrastructure
+
+# Not part of any image: deployment definitions and prose.
+infrastructure/lib
+infrastructure/bin
+infrastructure/cdk.out
 docs
+**/tests
