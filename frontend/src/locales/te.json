@@ -396,5 +396,8 @@
     "howEyebrow": "వ్యాపియో ఎలా పనిచేస్తుంది",
     "capabilitiesEyebrow": "ఇది ఏమి చేస్తుంది",
     "eyebrow": "Your shop. Your memory. Your AI."
+  },
+  "runtime": {
+    "partlyLocalBody": "మీ దుకాణం రికార్డులు AWSలో ఉన్నాయి. ఈ మిషీన్‌లో ఇంకా: {subsystems}."
   }
 }

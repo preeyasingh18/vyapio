@@ -396,5 +396,8 @@
     "howEyebrow": "व्यापिओ कसे काम करते",
     "capabilitiesEyebrow": "हे काय करते",
     "eyebrow": "Your shop. Your memory. Your AI."
+  },
+  "runtime": {
+    "partlyLocalBody": "तुमच्या दुकानाची नोंद AWS मध्ये आहे. या मशीनवर अजूनही: {subsystems}."
   }
 }

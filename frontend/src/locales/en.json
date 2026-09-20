@@ -554,7 +554,8 @@
     "localModeBody": "Data is stored on this machine and has not been sent to AWS. Subsystems running locally: {subsystems}.",
     "notificationsMock": "Reminders are recorded but not delivered — no messaging provider is configured.",
     "aiLocal": "AI is not configured, so Vyapio is using its built-in rules.",
-    "connected": "Connected to AWS"
+    "connected": "Connected to AWS",
+    "partlyLocalBody": "Your shop’s records are in AWS. Still running on this machine: {subsystems}."
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",

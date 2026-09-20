@@ -396,5 +396,8 @@
     "howEyebrow": "வியாபியோ எப்படி வேலை செய்கிறது",
     "capabilitiesEyebrow": "இது என்ன செய்கிறது",
     "eyebrow": "Your shop. Your memory. Your AI."
+  },
+  "runtime": {
+    "partlyLocalBody": "உங்கள் கடையின் பதிவுகள் AWS-இல் உள்ளன. இந்த கணினியில் இன்னும்: {subsystems}."
   }
 }

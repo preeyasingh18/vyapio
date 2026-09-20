@@ -396,5 +396,8 @@
     "howEyebrow": "ವ್ಯಾಪಿಯೊ ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ",
     "capabilitiesEyebrow": "ಇದು ಏನು ಮಾಡುತ್ತದೆ",
     "eyebrow": "Your shop. Your memory. Your AI."
+  },
+  "runtime": {
+    "partlyLocalBody": "ನಿಮ್ಮ ಅಂಗಡಿಯ ದಾಖಲೆಗಳು AWSನಲ್ಲಿವೆ. ಈ ಯಂತ್ರದಲ್ಲಿ ಇನ್ನೂ: {subsystems}."
   }
 }

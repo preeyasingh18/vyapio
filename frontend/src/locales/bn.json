@@ -396,5 +396,8 @@
     "howEyebrow": "ব্যাপিও কীভাবে কাজ করে",
     "capabilitiesEyebrow": "এটি কী করে",
     "eyebrow": "Your shop. Your memory. Your AI."
+  },
+  "runtime": {
+    "partlyLocalBody": "আপনার দোকানের হিসাব AWS-এ আছে। এই মেশিনে এখনও চলছে: {subsystems}।"
   }
 }

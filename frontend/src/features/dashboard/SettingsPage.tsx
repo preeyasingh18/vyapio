@@ -151,16 +151,31 @@ export default function SettingsPage() {
         {/* ── Connection ────────────────────────────────────────────────── */}
         <SectionHeading title={t('settings.connection')} className="mt-7" />
         {runtime ? (
+          (() => {
+            /**
+             * The headline answers "where are my books", not "is every
+             * subsystem on AWS".
+             *
+             * Those had been the same question, so a shop whose records were
+             * already in DynamoDB was told "Local mode — data is stored on
+             * this machine and has not been sent to AWS" because speech
+             * recognition happened to be running in the browser. That is a
+             * false statement about where a shopkeeper's money is recorded,
+             * and it is the one thing on this screen they must be able to
+             * trust.
+             */
+            const dataOnAws = runtime.subsystems.database === 'aws';
+            return (
           <Card className="overflow-hidden">
             <div
               className={cn(
                 'flex items-center gap-3 px-4 py-3',
-                runtime.fullyProvisioned
+                dataOnAws
                   ? 'bg-[var(--color-success-soft)]'
                   : 'bg-[var(--color-warning-soft)]',
               )}
             >
-              {runtime.fullyProvisioned ? (
+              {dataOnAws ? (
                 <Cloud className="size-5 shrink-0 text-[var(--color-success)]" aria-hidden="true" />
               ) : (
                 <CloudOff
@@ -172,12 +187,10 @@ export default function SettingsPage() {
                 <p
                   className={cn(
                     'text-sm font-bold',
-                    runtime.fullyProvisioned
-                      ? 'text-[var(--color-success)]'
-                      : 'text-[var(--color-warning)]',
+                    dataOnAws ? 'text-[var(--color-success)]' : 'text-[var(--color-warning)]',
                   )}
                 >
-                  {runtime.fullyProvisioned ? t('runtime.connected') : t('runtime.localMode')}
+                  {dataOnAws ? t('runtime.connected') : t('runtime.localMode')}
                 </p>
                 <p className="text-xs text-[var(--color-ink-soft)]">
                   {runtime.stage} · {runtime.region}
@@ -225,9 +238,17 @@ export default function SettingsPage() {
               </div>
             </div>
 
+            {/* Where the records are, then what is still running here —
+                two separate facts, and only the first is about the shop. */}
             {!runtime.fullyProvisioned ? (
               <p className="border-t border-[var(--color-line)] bg-[var(--color-sunken)] px-4 py-3 text-xs leading-snug text-[var(--color-muted)]">
-                {t('runtime.localModeBody', { subsystems: runtime.localSubsystems.join(', ') })}
+                {dataOnAws
+                  ? t('runtime.partlyLocalBody', {
+                      subsystems: runtime.localSubsystems.join(', '),
+                    })
+                  : t('runtime.localModeBody', {
+                      subsystems: runtime.localSubsystems.join(', '),
+                    })}
               </p>
             ) : null}
 
@@ -237,6 +258,8 @@ export default function SettingsPage() {
               </p>
             ) : null}
           </Card>
+            );
+          })()
         ) : null}
 
         {/* ── Account ───────────────────────────────────────────────────── */}
