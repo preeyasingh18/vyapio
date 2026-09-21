@@ -34,6 +34,26 @@ export type LambdaStackProps = StackProps & {
     textractEnabled: boolean;
   };
   notificationProvider: string;
+  /**
+   * WhatsApp Business Cloud API credentials, when there are any.
+   *
+   * Absent for every deployment that is not sending on WhatsApp, and the
+   * variables are then left off the function entirely rather than set empty —
+   * the backend decides what it can deliver by whether these are present.
+   */
+  whatsapp?: WhatsAppConfig;
+};
+
+/** What the backend reads; see backend/src/config/index.ts. */
+export type WhatsAppConfig = {
+  accessToken: string;
+  phoneNumberId: string;
+  businessAccountId?: string;
+  apiVersion?: string;
+  template: string;
+  templateLanguage?: string;
+  templateParams?: string;
+  requireOptIn?: boolean;
 };
 
 /**
@@ -120,6 +140,7 @@ export class LambdaStack extends Stack {
 
         CORS_ALLOWED_ORIGINS: props.allowedOrigins.join(','),
         NOTIFICATION_PROVIDER: props.notificationProvider,
+        ...whatsappEnvironment(props.whatsapp),
 
         BEDROCK_ENABLED: String(props.ai.bedrockEnabled),
         BEDROCK_REGION: props.ai.bedrockRegion,
@@ -287,4 +308,33 @@ export class LambdaStack extends Stack {
       exportName: `Vyapio-${props.stage}-EcrRepositoryUri`,
     });
   }
+}
+
+/**
+ * The WhatsApp variables, or nothing at all.
+ *
+ * An empty string here would be worse than a missing one: the backend treats a
+ * blank token as configured-but-broken, and reminders would be reported as
+ * attempted against Meta rather than plainly skipped. So every optional value
+ * is omitted when it has no answer, and the defaults stay in one place — the
+ * backend's own config.
+ */
+function whatsappEnvironment(whatsapp?: WhatsAppConfig): Record<string, string> {
+  if (!whatsapp) return {};
+  return {
+    WHATSAPP_ACCESS_TOKEN: whatsapp.accessToken,
+    WHATSAPP_PHONE_NUMBER_ID: whatsapp.phoneNumberId,
+    WHATSAPP_PAYMENT_REMINDER_TEMPLATE: whatsapp.template,
+    ...(whatsapp.businessAccountId
+      ? { WHATSAPP_BUSINESS_ACCOUNT_ID: whatsapp.businessAccountId }
+      : {}),
+    ...(whatsapp.apiVersion ? { WHATSAPP_API_VERSION: whatsapp.apiVersion } : {}),
+    ...(whatsapp.templateLanguage
+      ? { WHATSAPP_TEMPLATE_LANGUAGE_CODE: whatsapp.templateLanguage }
+      : {}),
+    ...(whatsapp.templateParams ? { WHATSAPP_TEMPLATE_PARAMS: whatsapp.templateParams } : {}),
+    ...(whatsapp.requireOptIn === undefined
+      ? {}
+      : { WHATSAPP_REQUIRE_OPT_IN: String(whatsapp.requireOptIn) }),
+  };
 }

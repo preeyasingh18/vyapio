@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import { App, Tags } from 'aws-cdk-lib';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { DatabaseStack } from '../lib/database-stack';
 import { CognitoStack } from '../lib/cognito-stack';
 import { StorageStack } from '../lib/storage-stack';
 import { EventsStack } from '../lib/events-stack';
-import { LambdaStack } from '../lib/lambda-stack';
+import { LambdaStack, type WhatsAppConfig } from '../lib/lambda-stack';
 import { ApiStack } from '../lib/api-stack';
 import { AiStack } from '../lib/ai-stack';
 import { FrontendStack } from '../lib/frontend-stack';
@@ -28,6 +30,11 @@ import { FrontendStack } from '../lib/frontend-stack';
  *   transcribeEnabled true to use Amazon Transcribe for voice
  *   textractEnabled   true to read printed invoices
  *   appOrigin         the CloudFront URL, added to CORS on the second deploy
+ *   notificationProvider  mock | sns | whatsapp           (default: mock)
+ *
+ * `whatsapp` additionally needs WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID
+ * and WHATSAPP_PAYMENT_REMINDER_TEMPLATE in the repository root `.env`; the
+ * deploy reads them from there so the token is never typed at a prompt.
  *
  * Stacks are split by lifecycle rather than by service: the database and user
  * pool outlive everything and are the things you least want replaced, while the
@@ -97,6 +104,39 @@ const allowedOrigins = appOrigin
 const notificationProvider =
   (app.node.tryGetContext('notificationProvider') as string | undefined) ?? 'mock';
 
+/**
+ * WhatsApp credentials, read from the repository's `.env` rather than taken on
+ * the command line.
+ *
+ * The access token is a credential, and the two obvious places to put it are
+ * both wrong: committing it to this file publishes it, and passing it as
+ * `-c whatsappToken=...` writes it into shell history on every deploy. `.env`
+ * is already the file that holds it locally and is already gitignored, so the
+ * deploy reads it from there and it is typed nowhere.
+ *
+ * It does end up as a Lambda environment variable, readable by anyone with
+ * console access to this account. That is the trade this makes: a shop's
+ * reminders working on AWS, against a secret that a Secrets Manager lookup at
+ * cold start would protect better. Worth revisiting before real shops use it.
+ */
+const whatsapp = readWhatsAppConfig();
+
+/**
+ * Refuse a deployment that would claim to send and then couldn't.
+ *
+ * Without this the deploy succeeds, the Lambda comes up with
+ * NOTIFICATION_PROVIDER=whatsapp and no token, and the first shopkeeper to
+ * press "Send reminder" is the one who finds out. Failing here costs a minute;
+ * failing there costs a customer who was never chased.
+ */
+if (notificationProvider === 'whatsapp' && !whatsapp) {
+  throw new Error(
+    'notificationProvider=whatsapp, but .env has no usable WhatsApp credentials. ' +
+      'WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID and ' +
+      'WHATSAPP_PAYMENT_REMINDER_TEMPLATE must all be set in the repository root .env.',
+  );
+}
+
 const common = { env, stage };
 
 /* ── Long-lived state ──────────────────────────────────────────────────── */
@@ -142,6 +182,9 @@ const lambda = new LambdaStack(app, `Vyapio-${stage}-Lambda`, {
   allowedOrigins,
   ai,
   notificationProvider,
+  // Only attached when WhatsApp is the chosen provider; a mock deployment has
+  // no reason to be carrying a live access token.
+  ...(notificationProvider === 'whatsapp' && whatsapp ? { whatsapp } : {}),
   description: 'Vyapio: the API Lambda, as a Docker image',
 });
 
@@ -175,3 +218,77 @@ Tags.of(app).add('Stage', stage);
 Tags.of(app).add('ManagedBy', 'CDK');
 
 void frontend;
+
+/* ── Reading .env ────────────────────────────────────────────────────────── */
+
+/**
+ * The repository's `.env`, parsed just far enough.
+ *
+ * Deliberately not `dotenv`: this needs four lines of parsing and adding a
+ * dependency to the infrastructure package to get them would be the larger
+ * change. It also does not touch `process.env` — nothing else in this app
+ * should start behaving differently because a deploy read a file.
+ */
+function readDotEnv(): Record<string, string> {
+  const file = path.join(__dirname, '../../.env');
+  if (!fs.existsSync(file)) return {};
+
+  const values: Record<string, string> = {};
+  for (const line of fs.readFileSync(file, 'utf8').split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    const split = trimmed.indexOf('=');
+    if (split < 1) continue;
+
+    const key = trimmed.slice(0, split).trim();
+    // Quotes are how a value containing spaces is written; they are not part
+    // of the value, and a token shipped with its quotes still attached fails
+    // at Meta with an error about the token rather than about the quotes.
+    const value = trimmed.slice(split + 1).trim().replace(/^(['"])(.*)\1$/, '$2');
+    values[key] = value;
+  }
+  return values;
+}
+
+/**
+ * The WhatsApp settings, or undefined if this machine has none.
+ *
+ * The real environment wins over the file so CI can supply these without one.
+ * The three required values are required together: a token with no template is
+ * not a partial configuration, it is a configuration that cannot send, because
+ * Meta refuses business-initiated messages that are not templates.
+ */
+function readWhatsAppConfig(): WhatsAppConfig | undefined {
+  const file = readDotEnv();
+
+  /**
+   * The real environment wins over the file, including when it is set to
+   * nothing — `WHATSAPP_ACCESS_TOKEN= npx cdk deploy` is how a deploy says
+   * "not this time" without editing `.env`. An empty value is never treated as
+   * an answer, so the guard above catches it rather than a blank token
+   * reaching Meta.
+   */
+  const read = (key: string): string | undefined => {
+    const value = key in process.env ? process.env[key] : file[key];
+    return value && value.length > 0 ? value : undefined;
+  };
+
+  const accessToken = read('WHATSAPP_ACCESS_TOKEN') ?? read('WHATSAPP_TOKEN');
+  const phoneNumberId = read('WHATSAPP_PHONE_NUMBER_ID');
+  const template = read('WHATSAPP_PAYMENT_REMINDER_TEMPLATE');
+  if (!accessToken || !phoneNumberId || !template) return undefined;
+
+  const requireOptIn = read('WHATSAPP_REQUIRE_OPT_IN');
+
+  return {
+    accessToken,
+    phoneNumberId,
+    template,
+    businessAccountId: read('WHATSAPP_BUSINESS_ACCOUNT_ID'),
+    apiVersion: read('WHATSAPP_API_VERSION'),
+    templateLanguage: read('WHATSAPP_TEMPLATE_LANGUAGE_CODE'),
+    templateParams: read('WHATSAPP_TEMPLATE_PARAMS'),
+    ...(requireOptIn === undefined ? {} : { requireOptIn: requireOptIn === 'true' }),
+  };
+}
